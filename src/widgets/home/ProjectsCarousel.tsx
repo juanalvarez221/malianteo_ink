@@ -2,64 +2,52 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
-type ReelItem = {
-  title: string;
-  src: string;
-};
-
-const REELS: ReelItem[] = [
+const REELS = [
   {
-    title: "Reel 01",
+    kind: "video" as const,
     src: "/reels/reel-DTlrOHUCbNq.mp4",
   },
   {
-    title: "Reel 02",
+    kind: "video" as const,
     src: "/reels/reel-DRCx8l4jTDd.mp4",
   },
   {
-    title: "Reel 03",
+    kind: "video" as const,
     src: "/reels/reel-DC-QB2th-3o.mp4",
   },
-];
+  {
+    kind: "instagram" as const,
+    src: "https://www.instagram.com/reel/DW2JpgDKBSZ/embed",
+    href: "https://www.instagram.com/p/DW2JpgDKBSZ/",
+  },
+] as const;
 
 export function ProjectsCarousel() {
   const [index, setIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-
-  const next = () => {
-    setIndex((prev) => (prev + 1) % REELS.length);
-  };
-
-  const prev = () => {
-    setIndex((prev) => (prev - 1 + REELS.length) % REELS.length);
-  };
 
   useEffect(() => {
-    if (isPaused) return;
-    const id = setInterval(next, 7000);
-    return () => clearInterval(id);
-  }, [isPaused]);
+    const delay = REELS[index].kind === "instagram" ? 12000 : 7000;
+    const id = setTimeout(() => {
+      setIndex((prev) => (prev + 1) % REELS.length);
+    }, delay);
+    return () => clearTimeout(id);
+  }, [index]);
 
   return (
-    <section
-      className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/65 p-5 md:p-8"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
+    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/65 p-5 md:p-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(500px_220px_at_15%_0%,rgba(168,85,247,0.28),transparent_58%),radial-gradient(700px_280px_at_95%_100%,rgba(124,58,237,0.2),transparent_60%)]" />
 
       <div className="relative z-10">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-200/80">
-          Proyectos destacados
+          Movimiento y detalle
         </p>
         <h3 className="typo-section mt-2 text-[2rem] md:text-[2.5rem]">
-          Galería en video de Malianteo
+          Showreel continuo de Malianteo
         </h3>
         <p className="typo-body mt-3 max-w-3xl">
-          Selección de videos de Malianteo independiente en reproducción automática, con una
-          experiencia limpia, dinámica y profesional.
+          Una secuencia automática de piezas reales: composición, contraste y
+          técnica en flujo constante, sin intervención manual.
         </p>
       </div>
 
@@ -70,68 +58,60 @@ export function ProjectsCarousel() {
               <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
               <div className="aspect-[9/16] w-full">
                 <AnimatePresence mode="wait">
-                  <motion.video
+                  <motion.div
                     key={REELS[index].src}
-                    title={REELS[index].title}
-                    src={REELS[index].src}
-                    className="h-full w-full"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="auto"
+                    className="relative h-full w-full"
                     initial={{ opacity: 0, scale: 1.02 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.985 }}
                     transition={{ duration: 1.1, ease: "easeInOut" }}
-                  />
+                  >
+                    {REELS[index].kind === "video" ? (
+                      <video
+                        title="Showreel automático de Malianteo"
+                        src={REELS[index].src}
+                        className="h-full w-full"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="auto"
+                      />
+                    ) : (
+                      <div className="relative h-full w-full bg-black">
+                        <iframe
+                          src={REELS[index].src}
+                          title="Reel de Instagram de Malianteo"
+                          className="h-full w-full border-0"
+                          loading="eager"
+                          allow="autoplay; encrypted-media; clipboard-write; picture-in-picture; web-share"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                        />
+                      </div>
+                    )}
+                  </motion.div>
                 </AnimatePresence>
               </div>
             </div>
           </div>
 
-          <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-3 pb-3">
+          <div className="absolute inset-x-0 bottom-0 z-20 flex items-center px-3 pb-3">
             <div className="typo-tech rounded-full border border-white/15 bg-black/45 px-3 py-1 text-zinc-200">
-              {index + 1} / {REELS.length}
+              {REELS[index].kind === "instagram" ? "Reel oficial en Instagram" : "Reproducción automática en bucle"}
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={prev}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/50 text-zinc-100 transition hover:bg-black/70"
-                aria-label="Proyecto anterior"
+            {REELS[index].kind === "instagram" ? (
+              <a
+                href={REELS[index].href}
+                target="_blank"
+                rel="noreferrer"
+                className="typo-tech ml-2 rounded-full border border-violet-400/35 bg-violet-500/20 px-3 py-1 text-violet-100 transition hover:bg-violet-500/30"
               >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={next}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/50 text-zinc-100 transition hover:bg-black/70"
-                aria-label="Proyecto siguiente"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+                Abrir reel
+              </a>
+            ) : null}
           </div>
         </article>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {REELS.map((item, i) => (
-            <button
-              key={`${item.title}-${i}`}
-              type="button"
-              onClick={() => setIndex(i)}
-              className={[
-                "rounded-full border px-3 py-1 text-xs font-semibold transition",
-                i === index
-                  ? "border-violet-500/35 bg-violet-600/20 text-violet-100"
-                  : "border-white/10 bg-white/5 text-zinc-200",
-              ].join(" ")}
-            >
-              {item.title}
-            </button>
-          ))}
-        </div>
         <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full border border-white/10 bg-white/5">
           <motion.div
             key={index}

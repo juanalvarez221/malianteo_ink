@@ -11,7 +11,7 @@ import {
   useTransform,
 } from "framer-motion";
 import Link from "next/link";
-import { Camera, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { ProjectsCarousel } from "@/widgets/home/ProjectsCarousel";
 import { TeoIntroCarousel } from "@/widgets/home/TeoIntroCarousel";
 
@@ -39,6 +39,7 @@ export function HeroSplash({
     backgroundImageUrls && backgroundImageUrls.length > 0
       ? backgroundImageUrls
       : [backgroundImageUrl];
+  const useHeroCarousel = !backgroundVideoUrl && heroImages.length > 1;
   const currentHeroImage = heroImages[heroIndex] ?? backgroundImageUrl;
 
   const { scrollYProgress, scrollY } = useScroll({
@@ -55,22 +56,25 @@ export function HeroSplash({
   // Base parallax that always tracks scroll progress.
   const imageY = useTransform(scrollYProgress, [0, 1], [0, -72]);
   const imageScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.78, 1], [1, 0.94, 0.72]);
+  const heroBlur = useTransform(scrollYProgress, [0, 1], [0, 2.4]);
+  const heroFilter = useMotionTemplate`blur(${heroBlur}px)`;
 
-  const markY = useTransform(scrollYProgress, [0, 1], [28, 88]);
-  const markOpacity = useTransform(scrollYProgress, [0, 0.55, 1], [1, 0.72, 0.08]);
-  const markScale = useTransform(scrollYProgress, [0, 0.55, 1], [1, 1.08, 1.2]);
+  const markY = useTransform(scrollYProgress, [0, 1], [0, 34]);
+  const markOpacity = useTransform(scrollYProgress, [0, 0.55, 1], [1, 0.76, 0.12]);
+  const markScale = useTransform(scrollYProgress, [0, 0.55, 1], [0.92, 1.02, 1.14]);
   const markBlur = useTransform(scrollYProgress, [0, 0.7, 1], [0, 0.6, 2.8]);
   const markFilter = useMotionTemplate`blur(${markBlur}px)`;
-  const subtitleY = useTransform(scrollYProgress, [0, 1], [0, 60]);
-  const subtitleOpacity = useTransform(scrollYProgress, [0, 1], [0.92, 0.45]);
+  const subtitleY = useTransform(scrollYProgress, [0, 1], [0, 52]);
+  const subtitleOpacity = useTransform(scrollYProgress, [0, 1], [0.88, 0.38]);
 
   useEffect(() => {
-    if (heroImages.length <= 1) return;
+    if (!useHeroCarousel) return;
     const id = window.setInterval(() => {
       setHeroIndex((prev) => (prev + 1) % heroImages.length);
     }, 7000);
     return () => window.clearInterval(id);
-  }, [heroImages.length]);
+  }, [heroImages.length, useHeroCarousel]);
 
   return (
     <main className="relative overflow-hidden bg-black text-white">
@@ -78,10 +82,10 @@ export function HeroSplash({
       <div className="pointer-events-none absolute -left-24 top-[36%] h-64 w-64 rounded-full bg-violet-500/18 blur-[95px] md:h-96 md:w-96" />
       <div className="pointer-events-none absolute -right-16 top-[58%] h-64 w-64 rounded-full bg-fuchsia-500/14 blur-[95px] md:h-[26rem] md:w-[26rem]" />
       <div className="pointer-events-none absolute left-1/2 top-[74%] h-60 w-[82vw] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.2),transparent_68%)] blur-[46px]" />
-      <section ref={sectionRef} className="relative h-[100dvh] w-full overflow-hidden">
+      <section ref={sectionRef} className="relative h-[138dvh] w-full">
         <motion.div
-          className="absolute inset-0"
-          style={{ y: imageY, scale: imageScale }}
+          className="sticky top-0 h-[100dvh] overflow-hidden"
+          style={{ y: imageY, scale: imageScale, opacity: heroOpacity, filter: heroFilter }}
           animate={
             direction === "down"
               ? { rotateZ: 0.12 }
@@ -129,7 +133,7 @@ export function HeroSplash({
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/35 to-black/95" />
         <div className="absolute inset-0 shadow-[inset_0_0_160px_40px_rgba(0,0,0,0.85)]" />
 
-        <div className="relative z-10 flex h-full w-full flex-col items-center justify-end px-6 pb-20 text-center">
+        <div className="sticky top-0 z-10 flex h-[100dvh] w-full flex-col items-center justify-end px-6 pb-20 text-center">
           {wordmarkSrc ? (
             <motion.div
               initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
@@ -145,7 +149,7 @@ export function HeroSplash({
                 scale: markScale,
                 filter: markFilter,
               }}
-              className="relative z-20 w-[92vw] max-w-[1200px] drop-shadow-[0_16px_36px_rgba(0,0,0,0.92)] will-change-transform"
+              className="absolute left-1/2 top-[56%] z-20 w-[80vw] max-w-[860px] -translate-x-1/2 drop-shadow-[0_16px_36px_rgba(0,0,0,0.92)] will-change-transform sm:w-[72vw] md:w-[82vw] md:max-w-[1050px]"
               aria-label={artistName}
             >
               <Image
@@ -163,7 +167,7 @@ export function HeroSplash({
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ duration: 0.6, ease: "easeOut" }}
               style={{ y: markY, opacity: markOpacity }}
-              className="typo-hero drop-shadow-[0_10px_28px_rgba(0,0,0,0.9)]"
+              className="typo-hero absolute left-1/2 top-[56%] -translate-x-1/2 drop-shadow-[0_10px_28px_rgba(0,0,0,0.9)]"
             >
               {artistName}
             </motion.h1>
@@ -178,7 +182,7 @@ export function HeroSplash({
             }
             transition={{ delay: 0.05, duration: 0.45, ease: "easeOut" }}
             style={{ y: subtitleY, opacity: subtitleOpacity }}
-            className="typo-subtitle mt-2 uppercase tracking-[0.32em] text-zinc-200"
+            className="mt-2 text-[0.76rem] font-semibold uppercase tracking-[0.24em] text-zinc-200 md:text-[0.92rem] md:tracking-[0.3em]"
           >
             {subtitle}
           </motion.p>
@@ -193,7 +197,7 @@ export function HeroSplash({
               href="/cotizacion"
               className="typo-cta group inline-flex w-full items-center justify-center gap-2 rounded-xl border border-violet-500/35 bg-gradient-to-r from-violet-700 to-fuchsia-600 px-5 py-4 text-white shadow-[0_0_28px_rgba(139,92,246,0.3)] transition hover:-translate-y-0.5 hover:shadow-[0_0_34px_rgba(139,92,246,0.4)] active:translate-y-0"
             >
-              Cotizar ahora
+              Quiero cotizar mi diseño
               <span className="transition-transform group-hover:translate-x-1">
                 →
               </span>
@@ -222,25 +226,23 @@ export function HeroSplash({
         <div className="absolute bottom-0 z-20 h-1 w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </section>
 
-      <section className="relative z-10 mx-auto w-full max-w-6xl px-6 py-14 md:py-20">
+      <section className="relative z-20 mx-auto -mt-12 w-full max-w-6xl px-6 py-14 md:-mt-16 md:py-20">
         <div className="glass-card relative overflow-hidden rounded-3xl p-5 md:p-8">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(520px_220px_at_10%_0%,rgba(168,85,247,0.2),transparent_58%),radial-gradient(620px_260px_at_100%_100%,rgba(124,58,237,0.16),transparent_60%)]" />
           <div className="relative z-10">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-200/80">
-              Presentación
+              Identidad
             </p>
             <h2 className="typo-section mt-2">
-              ¿Quién es Malianteo?
+              Arte oscuro, precisión total
             </h2>
             <p className="typo-body mt-3 max-w-3xl">
-              Hey, mucho gusto. Mi nombre es Mateo, artista de la ciudad de
-              Medellín y experto en realismo oscuro. Mi enfoque es convertir tu
-              idea en una pieza única, con carácter, detalle y una estética
-              impecable.
+              Malianteo transforma ideas en piezas con carácter, contraste y
+              técnica. Cada diseño nace para impactar desde el primer trazo.
             </p>
             <p className="typo-body mt-2 max-w-3xl">
-              Si estás buscando a alguien que haga realidad ese sueño en la piel,
-              estás en el lugar correcto.
+              Aquí no eliges una plantilla: construyes una obra personalizada
+              con dirección artística y ejecución profesional.
             </p>
 
             <TeoIntroCarousel />
@@ -266,7 +268,13 @@ export function HeroSplash({
         className="group fixed bottom-6 right-5 z-[70] inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-black/60 text-zinc-100 backdrop-blur-xl shadow-[0_16px_36px_-18px_rgba(168,85,247,0.72)] transition hover:border-fuchsia-300/45 hover:text-white"
       >
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white shadow-[0_0_24px_rgba(168,85,247,0.5)]">
-          <Camera className="h-5 w-5" />
+          <Image
+            src="/brand/instagram-icon.png"
+            alt="Instagram"
+            width={22}
+            height={22}
+            className="h-[22px] w-[22px] object-contain"
+          />
         </span>
       </motion.a>
     </main>
