@@ -1,0 +1,104 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
+import { QuoteShell } from "@/widgets/quote/QuoteShell";
+
+const STYLE_OPTIONS = [
+  "Realismo oscuro",
+  "Realismo blanco y negro",
+  "Surrealismo",
+  "Fineline",
+] as const;
+
+export function QuoteStyleStep({ size, zone }: { size: string; zone: string }) {
+  const router = useRouter();
+  const [style, setStyle] = useState<(typeof STYLE_OPTIONS)[number]>(
+    STYLE_OPTIONS[0],
+  );
+
+  return (
+    <QuoteShell brand="MALIANTEO">
+      <section className="relative mb-8">
+        <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-violet-600/15 blur-[60px]" />
+        <h2 className="typo-section text-[2.2rem] leading-[1.05] md:text-[3.2rem]">
+          Cotización
+          <br />
+          <span className="bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+            paso 3 de 4
+          </span>
+        </h2>
+        <p className="typo-body mt-3 max-w-xl">
+          Elige el estilo que mejor representa tu idea. Luego lo afinamos juntos.
+        </p>
+      </section>
+
+      <section className="mb-8">
+        <div className="glass-card rounded-2xl p-5">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full border border-violet-500/30 bg-violet-600/10">
+              <span className="text-[10px] font-bold text-white">3</span>
+            </div>
+            <h3 className="typo-subtitle text-sm uppercase tracking-[0.14em] text-zinc-200">
+              Estilo de tatuaje
+            </h3>
+          </div>
+
+          <div className="grid gap-2">
+            {STYLE_OPTIONS.map((option) => {
+              const selected = style === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setStyle(option)}
+                  className={
+                    selected
+                      ? "flex items-center justify-between rounded-2xl border border-violet-500/30 bg-violet-600/15 p-3"
+                      : "flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/8"
+                  }
+                >
+                  <span className="text-sm font-semibold text-zinc-50">{option}</span>
+                  <span
+                    className={
+                      selected
+                        ? "h-2.5 w-2.5 rounded-full bg-violet-500"
+                        : "h-2.5 w-2.5 rounded-full bg-white/20"
+                    }
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <div className="mt-6 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() =>
+            router.push(
+              `/cotizacion/ubicacion?size=${encodeURIComponent(size)}&zone=${encodeURIComponent(zone)}`,
+            )
+          }
+          className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:bg-white/8"
+        >
+          Anterior
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            router.push(
+              `/cotizacion/referencia?size=${encodeURIComponent(size)}&zone=${encodeURIComponent(zone)}&style=${encodeURIComponent(style)}`,
+            )
+          }
+          className="typo-cta group inline-flex items-center justify-center gap-2 rounded-xl border border-violet-500/35 bg-gradient-to-r from-violet-700 to-fuchsia-600 px-6 py-3 text-white transition hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,92,246,0.35)]"
+        >
+          Siguiente
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </button>
+      </div>
+    </QuoteShell>
+  );
+}

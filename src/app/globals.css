@@ -1,26 +1,291 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #f4f4f5;
+  --title-foreground: #ffffff;
+  --body-foreground: #a1a1aa;
+  --surface: #0b0b0d;
+  --surface2: #101014;
+  --stroke: rgba(255, 255, 255, 0.08);
+  --accent: #7c3aed;
+  --accent2: #a855f7;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* Global purple lightning ambience */
+@keyframes stormDrift {
+  0% {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+    opacity: 0.18;
+  }
+  50% {
+    transform: translate3d(2%, 1%, 0) scale(1.03);
+    opacity: 0.26;
+  }
+  100% {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+    opacity: 0.18;
+  }
+}
+
+@keyframes lightningFlash {
+  0%,
+  82%,
+  100% {
+    opacity: 0;
+    transform: scaleY(1) translateY(0);
+  }
+  84% {
+    opacity: 0.17;
+  }
+  85% {
+    opacity: 0.04;
+  }
+  86% {
+    opacity: 0.14;
+    transform: scaleY(1.04) translateY(-0.3%);
+  }
+}
+
+.purple-storm {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.purple-storm::before {
+  content: "";
+  position: absolute;
+  inset: -8%;
+  background:
+    radial-gradient(900px 420px at 15% 5%, rgba(139, 92, 246, 0.24), transparent 62%),
+    radial-gradient(780px 360px at 90% 20%, rgba(124, 58, 237, 0.2), transparent 64%),
+    radial-gradient(920px 420px at 50% 100%, rgba(167, 139, 250, 0.1), transparent 70%);
+  animation: stormDrift 16s ease-in-out infinite;
+}
+
+.purple-storm__flash {
+  position: absolute;
+  inset: -12%;
+  mix-blend-mode: screen;
+  opacity: 0;
+  filter: blur(26px);
+  animation: lightningFlash 8.5s linear infinite;
+}
+
+.purple-storm__flash--a {
+  background: linear-gradient(
+    118deg,
+    transparent 28%,
+    rgba(196, 181, 253, 0.36) 39%,
+    transparent 48%
+  );
+  animation-delay: 0.4s;
+}
+
+.purple-storm__flash--b {
+  background: linear-gradient(
+    72deg,
+    transparent 52%,
+    rgba(167, 139, 250, 0.28) 61%,
+    transparent 68%
+  );
+  animation-delay: 2.2s;
+}
+
+.purple-storm__flash--c {
+  background: linear-gradient(
+    132deg,
+    transparent 18%,
+    rgba(216, 180, 254, 0.24) 26%,
+    transparent 35%
+  );
+  animation-delay: 4.6s;
+}
+
+/* Small “app-like” polish */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.text-display {
+  font-family: var(--font-display), var(--font-inter), ui-sans-serif;
+  letter-spacing: 0.12em;
+}
+
+/* Professional typography system */
+.typo-hero {
+  font-family: var(--font-display), var(--font-inter), ui-sans-serif;
+  font-size: 2.625rem;
+  line-height: 1.02;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--title-foreground);
+}
+
+@media (min-width: 768px) {
+  .typo-hero {
+    font-size: 5rem;
+  }
+}
+
+.typo-section {
+  font-family: var(--font-display), var(--font-inter), ui-sans-serif;
+  font-size: 1.75rem;
+  line-height: 1.08;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--title-foreground);
+}
+
+@media (min-width: 768px) {
+  .typo-section {
+    font-size: 2.5rem;
+  }
+}
+
+.typo-subtitle {
+  font-family: var(--font-inter), ui-sans-serif, system-ui;
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--title-foreground);
+}
+
+@media (min-width: 768px) {
+  .typo-subtitle {
+    font-size: 1.25rem;
+  }
+}
+
+.typo-body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui;
+  font-size: 1rem;
+  line-height: 1.7;
+  font-weight: 400;
+  color: var(--body-foreground);
+}
+
+.typo-tech {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.typo-cta {
+  font-family: var(--font-inter), ui-sans-serif, system-ui;
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.app-surface {
+  background: radial-gradient(900px 500px at 50% 0%, rgba(168, 85, 247, 0.16), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 22%),
+    var(--surface);
+  border: 1px solid var(--stroke);
+}
+
+.noise {
+  position: relative;
+}
+.noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.09;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.65'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+
+/* Subtle animated “smoke” used in hero */
+@keyframes smokeMove {
+  0% {
+    transform: translate3d(-6%, -2%, 0) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate3d(6%, 2%, 0) scale(1.06);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate3d(-6%, -2%, 0) scale(1);
+    opacity: 0.55;
+  }
+}
+
+.smoke {
+  position: absolute;
+  inset: -30%;
+  pointer-events: none;
+  filter: blur(22px);
+  opacity: 0.7;
+  animation: smokeMove 12s ease-in-out infinite;
+  background:
+    radial-gradient(closest-side at 35% 35%, rgba(168, 85, 247, 0.24), transparent 60%),
+    radial-gradient(closest-side at 70% 50%, rgba(255, 255, 255, 0.08), transparent 62%),
+    radial-gradient(closest-side at 50% 70%, rgba(139, 92, 246, 0.18), transparent 62%);
+}
+
+/* Quote flow styles (glassmorphism) */
+.glass-card {
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-card-selected {
+  background: linear-gradient(
+    145deg,
+    rgba(35, 16, 58, 0.82) 0%,
+    rgba(20, 20, 20, 0.9) 100%
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(168, 85, 247, 0.55);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.24), inset 0 0 10px rgba(139, 92, 246, 0.1);
+}
+
+@keyframes marqueeScroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marqueeScroll 42s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
 }
