@@ -8,12 +8,7 @@ export default function Home() {
       artistName="MALIANTEO"
       subtitle="Tattoo Artist"
       backgroundImageUrl="/brand/teo1.png"
-      backgroundImageUrls={[
-        "/brand/teo1.png",
-        "/brand/teo2.png",
-        "/brand/teo3.png",
-        "/brand/malianteo.png",
-      ]}
+      backgroundVideoUrl="/brand/malianteo_video.mp4"
       wordmarkSrc="/brand/wordmark-malianteo-clean.png"
     />
   );

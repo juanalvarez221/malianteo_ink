@@ -18,6 +18,7 @@ import { TeoIntroCarousel } from "@/widgets/home/TeoIntroCarousel";
 type HeroSplashProps = {
   backgroundImageUrl: string;
   backgroundImageUrls?: string[];
+  backgroundVideoUrl?: string;
   artistName: string;
   subtitle: string;
   wordmarkSrc?: string;
@@ -26,6 +27,7 @@ type HeroSplashProps = {
 export function HeroSplash({
   backgroundImageUrl,
   backgroundImageUrls,
+  backgroundVideoUrl,
   artistName,
   subtitle,
   wordmarkSrc,
@@ -87,26 +89,40 @@ export function HeroSplash({
           }
           transition={{ duration: 0.45, ease: "easeOut" }}
         >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentHeroImage}
-              initial={{ opacity: 0, scale: 1.02 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.985 }}
-              transition={{ duration: 1.1, ease: "easeInOut" }}
-              className="absolute inset-0"
-            >
-              <Image
-                src={currentHeroImage}
-                alt={`${artistName} Tattoo Artist`}
-                fill
-                priority
-                quality={100}
-                sizes="100vw"
-                className="object-cover object-center"
-              />
-            </motion.div>
-          </AnimatePresence>
+          {backgroundVideoUrl ? (
+            <video
+              key={backgroundVideoUrl}
+              src={backgroundVideoUrl}
+              className="h-full w-full object-cover object-center"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster={backgroundImageUrl}
+            />
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentHeroImage}
+                initial={{ opacity: 0, scale: 1.02 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.985 }}
+                transition={{ duration: 1.1, ease: "easeInOut" }}
+                className="absolute inset-0"
+              >
+                <Image
+                  src={currentHeroImage}
+                  alt={`${artistName} Tattoo Artist`}
+                  fill
+                  priority
+                  quality={100}
+                  sizes="100vw"
+                  className="object-cover object-center"
+                />
+              </motion.div>
+            </AnimatePresence>
+          )}
         </motion.div>
 
         <div className="absolute inset-0 bg-[radial-gradient(900px_500px_at_50%_0%,rgba(168,85,247,0.34),transparent_60%),radial-gradient(560px_280px_at_22%_16%,rgba(147,51,234,0.18),transparent_64%)]" />
