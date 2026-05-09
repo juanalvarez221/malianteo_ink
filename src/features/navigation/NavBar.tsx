@@ -6,8 +6,6 @@ import {
   Home,
   Image as ImageIcon,
   Sparkles,
-  CalendarDays,
-  User,
   MessageCircle,
 } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
@@ -16,8 +14,6 @@ const items = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/proyectos", label: "Proyectos", icon: ImageIcon },
   { href: "/cotizacion", label: "Cotizar", icon: Sparkles },
-  { href: "/citas", label: "Citas", icon: CalendarDays },
-  { href: "/perfil", label: "Perfil", icon: User },
   { href: "/contacto", label: "Contacto", icon: MessageCircle },
 ];
 
@@ -28,7 +24,7 @@ export function NavBar() {
     <nav className="fixed inset-x-0 bottom-0 z-50">
       <div className="mx-auto w-full max-w-md px-4 pb-4">
         <div className="rounded-2xl border border-white/10 bg-black/70 backdrop-blur-xl shadow-[0_20px_50px_-35px_rgba(0,0,0,0.9)]">
-          <div className="grid grid-cols-6">
+          <div className="grid grid-cols-4">
             {items.map((it) => {
               const active = pathname === it.href;
               const Icon = it.icon;

@@ -1,0 +1,133 @@
+"use client";
+
+export type SiteLanguage = "es" | "en";
+
+export const LANGUAGE_STORAGE_KEY = "malianteo.language";
+
+export const SITE_COPY = {
+  es: {
+    languageTitle: "Elige tu idioma",
+    languageSubtitle: "Quiero que vivas la experiencia en tu idioma.",
+    languageEs: "Español",
+    languageEn: "English",
+    heroSubtitle: "Tattoo Artist Profesional",
+    heroCta: "Quiero cotizar mi diseño",
+    heroScroll: "Desliza hacia abajo",
+    identityTag: "Identidad",
+    identityTitle: "Arte oscuro, precision total",
+    identityP1:
+      "Soy Malianteo. Trabajo con realismo oscuro, tecnica limpia y una direccion artistica pensada para que tu pieza tenga caracter.",
+    identityP2:
+      "Aqui no hay plantillas ni copias: cada diseno nace desde cero para contar tu historia con fuerza y detalle.",
+    projectsTag: "Portafolio en movimiento",
+    projectsTitle: "Piezas reales, energia real",
+    projectsBody:
+      "Aqui ves parte de mi proceso: composicion, tecnica y caracter en cada proyecto.",
+    projectsCtaTag: "Carta de presentacion",
+    projectsCtaTitle: "Si conectas con esta energia, seguimos",
+    projectsCtaBody:
+      "Te entrego una cotizacion clara, creativa y aterrizada a tu idea.",
+    projectsCta1: "Cotizar mi proyecto",
+    projectsCta2: "Hablar conmigo",
+    quoteGreeting: "Hola, {name}. Vamos a darle forma a tu idea.",
+    quoteContactStep: "Primer paso",
+    quoteContactTitle: "Cuentame",
+    quoteContactTitle2: "quien eres",
+    quoteContactBody: "Solo lo justo para prepararte una propuesta a tu medida.",
+    quoteContactCard: "Datos de contacto",
+    quoteContinue: "Continuar",
+    quoteSizeStep: "Paso 1 de 4",
+    quoteSizeTitle: "Dime",
+    quoteSizeTitle2: "el tamano ideal",
+    quoteSizeBody: "Con esto te doy una estimacion clara de sesiones e inversion.",
+    quoteLocationStep: "Paso 2 de 4",
+    quoteLocationTitle: "Muestrame",
+    quoteLocationTitle2: "la zona",
+    quoteLocationBody: "Asi ajusto tecnica, detalle y tiempo para tu pieza.",
+    quoteStyleStep: "Paso 3 de 4",
+    quoteStyleTitle: "Elijamos",
+    quoteStyleTitle2: "tu estilo",
+    quoteStyleBody: "Elige el estilo que mas conecte contigo.",
+    quoteReferenceStep: "Paso 4 de 4",
+    quoteReferenceTitle: "Comparte",
+    quoteReferenceTitle2: "referencias",
+    quoteReferenceBody: "Si tienes imagenes, subelas y afinamos la idea juntos.",
+    quoteReferenceUpload: "Subir referencia",
+    quoteReferenceNext: "Revisar cotizacion",
+    quoteSummaryTag: "Cotizacion inteligente",
+    quoteSummaryTitle: "Tu idea, aterrizada",
+    quoteSummaryBody: "Revisala con calma y la cerramos por WhatsApp.",
+    quoteActionTitle: "Enviar por WhatsApp",
+    quoteActionBody: "Todo el seguimiento sera directo conmigo por WhatsApp.",
+    quoteActionCta: "Continuar a WhatsApp",
+    quoteActionReply: "Respuesta estimada: menos de 24 horas.",
+    quoteTalkWhatsapp: "Hablar por WhatsApp",
+    commonBack: "Anterior",
+  },
+  en: {
+    languageTitle: "Choose your language",
+    languageSubtitle: "I want you to experience this in your language.",
+    languageEs: "Spanish",
+    languageEn: "English",
+    heroSubtitle: "Professional Tattoo Artist",
+    heroCta: "I want to quote my design",
+    heroScroll: "Scroll down",
+    identityTag: "Identity",
+    identityTitle: "Dark art, total precision",
+    identityP1:
+      "I'm Malianteo. I work with dark realism, clean technique, and art direction built to give your piece real character.",
+    identityP2:
+      "No templates, no copies: every design is built from scratch to tell your story with power and detail.",
+    projectsTag: "Portfolio in motion",
+    projectsTitle: "Real pieces, real energy",
+    projectsBody:
+      "Here you can see part of my process: composition, technique, and character in every project.",
+    projectsCtaTag: "Presentation letter",
+    projectsCtaTitle: "If this energy speaks to you, let's move forward",
+    projectsCtaBody: "I'll give you a clear, creative quote tailored to your idea.",
+    projectsCta1: "Quote my project",
+    projectsCta2: "Talk to me",
+    quoteGreeting: "Hi, {name}. Let's shape your idea.",
+    quoteContactStep: "First step",
+    quoteContactTitle: "Tell me",
+    quoteContactTitle2: "who you are",
+    quoteContactBody: "Just what I need to build a tailored proposal.",
+    quoteContactCard: "Contact details",
+    quoteContinue: "Continue",
+    quoteSizeStep: "Step 1 of 4",
+    quoteSizeTitle: "Tell me",
+    quoteSizeTitle2: "the ideal size",
+    quoteSizeBody: "This gives you a clear estimate of sessions and budget.",
+    quoteLocationStep: "Step 2 of 4",
+    quoteLocationTitle: "Show me",
+    quoteLocationTitle2: "the area",
+    quoteLocationBody: "This helps me fine-tune technique, detail, and timing.",
+    quoteStyleStep: "Step 3 of 4",
+    quoteStyleTitle: "Let's choose",
+    quoteStyleTitle2: "your style",
+    quoteStyleBody: "Pick the style that best matches your idea.",
+    quoteReferenceStep: "Step 4 of 4",
+    quoteReferenceTitle: "Share",
+    quoteReferenceTitle2: "references",
+    quoteReferenceBody: "If you have images, upload them and we'll refine it together.",
+    quoteReferenceUpload: "Upload reference",
+    quoteReferenceNext: "Review quote",
+    quoteSummaryTag: "Smart quote",
+    quoteSummaryTitle: "Your idea, defined",
+    quoteSummaryBody: "Review it calmly and we close it through WhatsApp.",
+    quoteActionTitle: "Send via WhatsApp",
+    quoteActionBody: "All follow-up goes directly with me on WhatsApp.",
+    quoteActionCta: "Continue to WhatsApp",
+    quoteActionReply: "Estimated reply time: under 24 hours.",
+    quoteTalkWhatsapp: "Talk on WhatsApp",
+    commonBack: "Back",
+  },
+} as const;
+
+export type SiteCopyKey = keyof (typeof SITE_COPY)["es"];
+
+export function detectLanguage(): SiteLanguage {
+  if (typeof window === "undefined") return "es";
+  const lang = window.navigator.language.toLowerCase();
+  return lang.startsWith("en") ? "en" : "es";
+}

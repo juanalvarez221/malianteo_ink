@@ -6,8 +6,6 @@ import {
   Home,
   Image as ImageIcon,
   Sparkles,
-  CalendarDays,
-  User,
   MessageCircle,
 } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
@@ -16,8 +14,6 @@ const items = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/proyectos", label: "Proyectos", icon: ImageIcon },
   { href: "/cotizacion", label: "Cotización", icon: Sparkles },
-  { href: "/citas", label: "Citas", icon: CalendarDays },
-  { href: "/perfil", label: "Perfil", icon: User },
   { href: "/contacto", label: "Contacto", icon: MessageCircle },
 ];
 

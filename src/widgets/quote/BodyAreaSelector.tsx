@@ -1,6 +1,7 @@
 "use client";
 
 import { Bone, CircleDot, PersonStanding, Sparkles } from "lucide-react";
+import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
 
 export type ZoneId =
   | "brazo"
@@ -110,13 +111,14 @@ export function BodyAreaSelector({
   zone: ZoneId;
   onZoneChange: (zone: ZoneId) => void;
 }) {
+  const { language } = useSiteLanguage();
   const progress = 50;
 
   return (
     <div className="space-y-5">
       <div>
         <p className="typo-tech text-center uppercase tracking-[0.14em] text-zinc-300">
-          Paso 2 de 4
+          {language === "en" ? "Step 2 of 4" : "Paso 2 de 4"}
         </p>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-white/10 bg-white/5">
           <div
@@ -128,13 +130,14 @@ export function BodyAreaSelector({
 
       <div className="space-y-2">
         <h3 className="typo-section text-center text-[2rem] leading-tight md:text-[2.5rem]">
-          ¿En qué zona
+          {language === "en" ? "Which area" : "¿Que zona"}
           <br />
-          irá tu tatuaje?
+          {language === "en" ? "are you tattooing?" : "quieres tatuar?"}
         </h3>
         <p className="typo-body text-center">
-          Esta elección me permite estimar mejor el nivel de detalle, la técnica
-          recomendada y el tiempo aproximado de trabajo.
+          {language === "en"
+            ? "Pick it and I'll give you a more accurate estimate."
+            : "Eligela y te doy una estimacion mas precisa."}
         </p>
       </div>
 
@@ -142,13 +145,13 @@ export function BodyAreaSelector({
         <div className="glass-card flex flex-col items-center justify-center rounded-2xl p-3">
           <BodySilhouette side="front" zone={zone} />
           <span className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
-            Vista frontal
+            {language === "en" ? "Front view" : "Vista frontal"}
           </span>
         </div>
         <div className="glass-card flex flex-col items-center justify-center rounded-2xl p-3">
           <BodySilhouette side="back" zone={zone} />
           <span className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
-            Vista posterior
+            {language === "en" ? "Back view" : "Vista posterior"}
           </span>
         </div>
       </div>
@@ -156,7 +159,7 @@ export function BodyAreaSelector({
       <div>
         <p className="typo-subtitle mb-3 inline-flex items-center gap-2 text-base text-zinc-100">
           <Sparkles className="h-4 w-4 text-violet-300" />
-          Zonas frecuentes
+          {language === "en" ? "Popular areas" : "Zonas frecuentes"}
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {POPULAR_ZONES.map((id) => {

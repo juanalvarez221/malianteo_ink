@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { QuoteShell } from "@/widgets/quote/QuoteShell";
 import { ArrowRight, UserRound, Mail, Phone } from "lucide-react";
 import { getQuoteProfile, saveQuoteProfile } from "@/shared/lib/quoteProfile";
+import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
 
 export default function CotizacionPage() {
   const router = useRouter();
+  const { language, t } = useSiteLanguage();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -29,7 +31,11 @@ export default function CotizacionPage() {
     const cleanPhone = phone.trim();
     const cleanEmail = email.trim();
     if (!cleanName || !cleanPhone || !cleanEmail) {
-      setError("Para continuar, completa tu nombre, celular y correo.");
+      setError(
+        language === "en"
+          ? "Complete name, phone, and email."
+          : "Completa nombre, celular y correo.",
+      );
       return;
     }
     saveQuoteProfile({ name: cleanName, phone: cleanPhone, email: cleanEmail });
@@ -40,16 +46,18 @@ export default function CotizacionPage() {
     <QuoteShell brand="MALIANTEO">
       <section className="relative mb-8">
         <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-violet-600/15 blur-[60px]" />
+        <p className="typo-tech mb-2 uppercase tracking-[0.16em] text-violet-200/85">
+          {t("quoteContactStep")}
+        </p>
         <h2 className="typo-section text-[2.2rem] leading-[1.05] md:text-[3.2rem]">
-          Conozcámonos
+          {t("quoteContactTitle")}
           <br />
           <span className="bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-            para crear tu idea
+            {t("quoteContactTitle2")}
           </span>
         </h2>
-        <p className="typo-body mt-3 max-w-xl">
-          Te pediré solo lo esencial para darte una atención cercana, clara y
-          completamente personalizada desde el primer mensaje.
+        <p className="typo-body mt-4 max-w-2xl leading-relaxed">
+          {t("quoteContactBody")}
         </p>
       </section>
 
@@ -60,48 +68,48 @@ export default function CotizacionPage() {
               <span className="text-[10px] font-bold text-white">1</span>
             </div>
             <h3 className="typo-subtitle text-sm uppercase tracking-[0.14em] text-zinc-200">
-              Datos de contacto
+              {t("quoteContactCard")}
             </h3>
           </div>
 
-          <div className="grid gap-3">
+          <div className="grid gap-4">
             <label className="space-y-2">
               <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-300">
                 <UserRound className="h-4 w-4 text-violet-300" />
-                Nombre completo
+                {language === "en" ? "Full name" : "Nombre completo"}
               </span>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ej: Mateo Pérez"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-violet-500/50"
+                placeholder={language === "en" ? "Ex: John Doe" : "Ej: Mateo Pérez"}
+                className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-violet-500/50"
               />
             </label>
 
             <label className="space-y-2">
               <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-300">
                 <Phone className="h-4 w-4 text-violet-300" />
-                Celular
+                {language === "en" ? "Phone" : "Celular"}
               </span>
               <input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="Ej: +57 300 123 4567"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-violet-500/50"
+                placeholder={language === "en" ? "Ex: +1 555 000 1234" : "Ej: +57 300 123 4567"}
+                className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-violet-500/50"
               />
             </label>
 
             <label className="space-y-2">
               <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-300">
                 <Mail className="h-4 w-4 text-violet-300" />
-                Correo
+                {language === "en" ? "Email" : "Correo"}
               </span>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Ej: correo@ejemplo.com"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-violet-500/50"
+                placeholder={language === "en" ? "Ex: mail@example.com" : "Ej: correo@ejemplo.com"}
+                className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-violet-500/50"
               />
             </label>
           </div>
@@ -119,7 +127,7 @@ export default function CotizacionPage() {
           onClick={onNext}
           className="typo-cta group inline-flex w-full items-center justify-center gap-2 rounded-lg border border-violet-500/35 bg-gradient-to-r from-violet-700 to-fuchsia-600 py-5 text-white transition hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,92,246,0.35)] active:translate-y-0"
         >
-          Continuar con mi cotización
+          {t("quoteContinue")}
           <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
         </button>
       </div>

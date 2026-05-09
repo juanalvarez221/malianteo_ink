@@ -6,14 +6,14 @@ import {
   AnimatePresence,
   motion,
   useMotionTemplate,
-  useMotionValueEvent,
   useScroll,
   useTransform,
 } from "framer-motion";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MessageCircle } from "lucide-react";
 import { ProjectsCarousel } from "@/widgets/home/ProjectsCarousel";
-import { TeoIntroCarousel } from "@/widgets/home/TeoIntroCarousel";
+import { MalianteoIntroCarousel } from "@/widgets/home/MalianteoIntroCarousel";
+import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
 
 type HeroSplashProps = {
   backgroundImageUrl: string;
@@ -32,8 +32,8 @@ export function HeroSplash({
   subtitle,
   wordmarkSrc,
 }: HeroSplashProps) {
+  const { t } = useSiteLanguage();
   const sectionRef = useRef<HTMLElement>(null);
-  const [direction, setDirection] = useState<"up" | "down">("down");
   const [heroIndex, setHeroIndex] = useState(0);
   const heroImages =
     backgroundImageUrls && backgroundImageUrls.length > 0
@@ -42,15 +42,9 @@ export function HeroSplash({
   const useHeroCarousel = !backgroundVideoUrl && heroImages.length > 1;
   const currentHeroImage = heroImages[heroIndex] ?? backgroundImageUrl;
 
-  const { scrollYProgress, scrollY } = useScroll({
+  const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
-  });
-
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    const previous = scrollY.getPrevious() ?? latest;
-    if (latest > previous) setDirection("down");
-    if (latest < previous) setDirection("up");
   });
 
   // Base parallax that always tracks scroll progress.
@@ -60,7 +54,7 @@ export function HeroSplash({
   const heroBlur = useTransform(scrollYProgress, [0, 1], [0, 2.4]);
   const heroFilter = useMotionTemplate`blur(${heroBlur}px)`;
 
-  const markY = useTransform(scrollYProgress, [0, 1], [10, 22]);
+  const markY = useTransform(scrollYProgress, [0, 1], [24, 36]);
   const markOpacity = useTransform(scrollYProgress, [0, 0.55, 1], [1, 0.76, 0.12]);
   const markScale = useTransform(scrollYProgress, [0, 0.55, 1], [0.92, 1.02, 1.14]);
   const markBlur = useTransform(scrollYProgress, [0, 0.7, 1], [0, 0.6, 2.8]);
@@ -86,11 +80,7 @@ export function HeroSplash({
         <motion.div
           className="sticky top-0 h-[100dvh] overflow-hidden"
           style={{ y: imageY, scale: imageScale, opacity: heroOpacity, filter: heroFilter }}
-          animate={
-            direction === "down"
-              ? { rotateZ: 0.12 }
-              : { rotateZ: -0.08 }
-          }
+          animate={{ rotateZ: 0 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
         >
           {backgroundVideoUrl ? (
@@ -137,11 +127,7 @@ export function HeroSplash({
           {wordmarkSrc ? (
             <motion.div
               initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
-              animate={
-                direction === "down"
-                  ? { opacity: 1, y: 0, filter: "blur(0px)" }
-                  : { opacity: 0.95, y: -4, filter: "blur(0.2px)" }
-              }
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ duration: 0.45, ease: "easeOut" }}
               style={{
                 y: markY,
@@ -149,7 +135,7 @@ export function HeroSplash({
                 scale: markScale,
                 filter: markFilter,
               }}
-              className="z-20 w-[66vw] max-w-[360px] drop-shadow-[0_16px_36px_rgba(0,0,0,0.92)] will-change-transform sm:max-w-[420px] md:w-[74vw] md:max-w-[900px]"
+              className="z-20 w-[60vw] max-w-[320px] drop-shadow-[0_16px_36px_rgba(0,0,0,0.92)] will-change-transform sm:max-w-[380px] md:w-[68vw] md:max-w-[820px]"
               aria-label={artistName}
             >
               <Image
@@ -175,16 +161,12 @@ export function HeroSplash({
 
           <motion.p
             initial={{ opacity: 0, y: 8 }}
-            animate={
-              direction === "down"
-                ? { opacity: 0.92, y: 0 }
-                : { opacity: 0.85, y: -3 }
-            }
+            animate={{ opacity: 0.92, y: 0 }}
             transition={{ delay: 0.05, duration: 0.45, ease: "easeOut" }}
             style={{ y: subtitleY, opacity: subtitleOpacity }}
             className="mt-0.5 text-[0.54rem] font-semibold uppercase tracking-[0.16em] text-zinc-200 md:text-[0.84rem] md:tracking-[0.24em]"
           >
-            {subtitle}
+            {t("heroSubtitle") ?? subtitle}
           </motion.p>
 
           <motion.div
@@ -197,7 +179,7 @@ export function HeroSplash({
               href="/cotizacion"
               className="typo-cta group inline-flex w-full items-center justify-center gap-2 rounded-xl border border-violet-500/35 bg-gradient-to-r from-violet-700 to-fuchsia-600 px-5 py-3.5 text-[0.9rem] text-white shadow-[0_0_28px_rgba(139,92,246,0.3)] transition hover:-translate-y-0.5 hover:shadow-[0_0_34px_rgba(139,92,246,0.4)] active:translate-y-0 md:py-4"
             >
-              Quiero cotizar mi diseño
+              {t("heroCta")}
               <span className="transition-transform group-hover:translate-x-1">
                 →
               </span>
@@ -218,7 +200,7 @@ export function HeroSplash({
               <ChevronDown className="h-4 w-4 text-zinc-200" />
             </motion.span>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-300/90 md:text-[11px]">
-              Desliza hacia abajo
+              {t("heroScroll")}
             </p>
           </motion.div>
         </div>
@@ -237,22 +219,19 @@ export function HeroSplash({
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(520px_220px_at_10%_0%,rgba(168,85,247,0.2),transparent_58%),radial-gradient(620px_260px_at_100%_100%,rgba(124,58,237,0.16),transparent_60%)]" />
           <div className="relative z-10">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-200/80">
-              Identidad
+              {t("identityTag")}
             </p>
             <h2 className="typo-section mt-2">
-              Arte oscuro, precisión total
+              {t("identityTitle")}
             </h2>
             <p className="typo-body mt-3 max-w-3xl">
-              Soy Mateo, la mente detrás de Malianteo. Mi enfoque combina
-              realismo oscuro, técnica limpia y dirección artística para crear
-              piezas con carácter.
+              {t("identityP1")}
             </p>
             <p className="typo-body mt-2 max-w-3xl">
-              No trabajo con plantillas ni copias: cada tatuaje lo diseño desde
-              cero para que refleje tu identidad con fuerza, detalle y presencia.
+              {t("identityP2")}
             </p>
 
-            <TeoIntroCarousel />
+            <MalianteoIntroCarousel />
           </div>
         </div>
 
@@ -272,17 +251,29 @@ export function HeroSplash({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ delay: 0.35, duration: 0.5, ease: "easeOut" }}
         whileHover={{ y: -2, scale: 1.03 }}
-        className="group fixed bottom-6 right-5 z-[70] inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-black/60 text-zinc-100 backdrop-blur-xl shadow-[0_16px_36px_-18px_rgba(168,85,247,0.72)] transition hover:border-fuchsia-300/45 hover:text-white"
+        className="group fixed bottom-6 right-5 z-[70] inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/18 bg-black/55 text-zinc-100 backdrop-blur-xl shadow-[0_16px_36px_-18px_rgba(168,85,247,0.72)] transition hover:border-fuchsia-300/45 hover:text-white"
       >
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white shadow-[0_0_24px_rgba(168,85,247,0.5)]">
-          <Image
-            src="/brand/instagram-icon.png"
-            alt="Instagram"
-            width={22}
-            height={22}
-            className="h-[22px] w-[22px] object-contain"
-          />
-        </span>
+        <Image
+          src="/brand/instagram-icon.png"
+          alt="Instagram"
+          width={28}
+          height={28}
+          className="h-7 w-7 object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.24)]"
+        />
+      </motion.a>
+
+      <motion.a
+        href="https://wa.me/573104798643?text=Hola%20Malianteo%2C%20quiero%20continuar%20mi%20cotizacion."
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Hablar por WhatsApp con Malianteo"
+        initial={{ opacity: 0, y: 18, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 0.42, duration: 0.5, ease: "easeOut" }}
+        whileHover={{ y: -2, scale: 1.03 }}
+        className="group fixed bottom-24 right-5 z-[70] inline-flex h-14 w-14 items-center justify-center rounded-full border border-emerald-400/35 bg-black/55 text-emerald-200 backdrop-blur-xl shadow-[0_16px_36px_-18px_rgba(16,185,129,0.65)] transition hover:border-emerald-300/60 hover:text-emerald-100"
+      >
+        <MessageCircle className="h-6 w-6" />
       </motion.a>
     </main>
   );

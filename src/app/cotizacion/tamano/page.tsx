@@ -5,11 +5,13 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { QuoteShell } from "@/widgets/quote/QuoteShell";
 import { Check, ArrowRight } from "lucide-react";
+import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
 
 type SizeOption = "pequeno" | "mediano" | "grande";
 
 export default function CotizacionTamanoPage() {
   const router = useRouter();
+  const { t } = useSiteLanguage();
   const [size, setSize] = useState<SizeOption>("mediano");
 
   const options = useMemo(
@@ -46,16 +48,18 @@ export default function CotizacionTamanoPage() {
     <QuoteShell brand="MALIANTEO">
       <section className="relative mb-8">
         <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-violet-600/15 blur-[60px]" />
+        <p className="typo-tech mb-2 uppercase tracking-[0.16em] text-violet-200/85">
+          {t("quoteSizeStep")}
+        </p>
         <h2 className="typo-section text-[2.2rem] leading-[1.05] md:text-[3.2rem]">
-          Definamos
+          {t("quoteSizeTitle")}
           <br />
           <span className="bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-            el tamaño ideal
+            {t("quoteSizeTitle2")}
           </span>
         </h2>
-        <p className="typo-body mt-3 max-w-xl">
-          Este paso me ayuda a darte una estimación inicial más realista en
-          tiempo, sesiones y rango de inversión.
+        <p className="typo-body mt-4 max-w-2xl leading-relaxed">
+          {t("quoteSizeBody")}
         </p>
       </section>
 
@@ -135,14 +139,14 @@ export default function CotizacionTamanoPage() {
           onClick={() => router.push("/cotizacion")}
           className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:bg-white/8"
         >
-          Anterior
+          {t("commonBack")}
         </button>
         <button
           type="button"
           onClick={() => router.push(`/cotizacion/ubicacion?size=${size}`)}
           className="group inline-flex items-center justify-center gap-2 rounded-lg border border-violet-500/35 bg-gradient-to-r from-violet-700 to-fuchsia-600 px-6 py-3 text-[14px] font-bold uppercase tracking-[0.2em] text-white transition hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,92,246,0.35)] active:translate-y-0"
         >
-          Continuar
+          {t("quoteContinue")}
           <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
         </button>
       </div>

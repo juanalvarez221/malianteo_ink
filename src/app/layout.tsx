@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Space_Mono, Syncopate } from "next/font/google";
 import "./globals.css";
+import { LanguageProvider } from "@/shared/i18n/LanguageProvider";
+import { LanguagePrompt } from "@/widgets/i18n/LanguagePrompt";
 
 const fontInter = Inter({
   variable: "--font-inter",
@@ -33,15 +35,19 @@ export default function RootLayout({
   return (
     <html
       lang="es"
+      suppressHydrationWarning
       className={`${fontInter.variable} ${fontDisplay.variable} ${fontMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-black text-zinc-50">
-        <div aria-hidden className="purple-storm">
-          <span className="purple-storm__flash purple-storm__flash--a" />
-          <span className="purple-storm__flash purple-storm__flash--b" />
-          <span className="purple-storm__flash purple-storm__flash--c" />
-        </div>
-        <div className="relative z-10">{children}</div>
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-black text-zinc-50">
+        <LanguageProvider>
+          <div aria-hidden className="purple-storm">
+            <span className="purple-storm__flash purple-storm__flash--a" />
+            <span className="purple-storm__flash purple-storm__flash--b" />
+            <span className="purple-storm__flash purple-storm__flash--c" />
+          </div>
+          <div className="relative z-10">{children}</div>
+          <LanguagePrompt />
+        </LanguageProvider>
       </body>
     </html>
   );

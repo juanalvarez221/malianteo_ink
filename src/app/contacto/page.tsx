@@ -17,11 +17,14 @@ export default function ContactoPage() {
           <div className="p-4">
             <p className="text-sm font-semibold text-zinc-50">WhatsApp</p>
             <p className="mt-1 text-xs text-zinc-400">
-              Respuesta rápida para agenda y dudas.
+              Canal principal para cotizaciones y agenda.
             </p>
             <div className="mt-3">
-              <Button className="w-full" href="/">
-                Abrir chat (demo)
+              <Button
+                className="w-full"
+                href="https://wa.me/573104798643?text=Hola%20Malianteo%2C%20quiero%20continuar%20mi%20cotizacion."
+              >
+                Continuar por WhatsApp
               </Button>
             </div>
           </div>
