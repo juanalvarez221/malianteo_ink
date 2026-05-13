@@ -13,10 +13,10 @@ export const SITE_COPY = {
     heroSubtitle: "Tattoo Artist Profesional",
     heroCta: "Quiero cotizar mi diseño",
     heroScroll: "Desliza hacia abajo",
-    identityTag: "Manifiesto de identidad",
-    identityTitle: "No tatuo por tendencia, tatuo por vision",
+    identityTag: "Identidad",
+    identityTitle: "Vision clara, arte con caracter",
     identityP1:
-      "Soy Malianteo. Convierto ideas intensas en piezas con direccion artistica, tecnica limpia y un lenguaje visual que se siente propio.",
+      "Soy Malianteo. Diseno cada pieza desde cero, con tecnica limpia, composicion precisa y una estetica oscura que se siente autentica.",
     identityP2:
       "Cada proyecto lo construyo desde cero: leo tu historia, defino composicion y llevo el detalle al nivel que la pieza merece.",
     identityP3:
@@ -94,10 +94,10 @@ export const SITE_COPY = {
     heroSubtitle: "Professional Tattoo Artist",
     heroCta: "I want to quote my design",
     heroScroll: "Scroll down",
-    identityTag: "Identity manifesto",
-    identityTitle: "I do not tattoo trends, I tattoo vision",
+    identityTag: "Identity",
+    identityTitle: "Clear vision, art with character",
     identityP1:
-      "I am Malianteo. I turn intense ideas into pieces with strong art direction, clean technique, and a visual language that feels unique.",
+      "I am Malianteo. I design every piece from scratch with clean technique, precise composition, and a dark aesthetic that feels authentic.",
     identityP2:
       "Every project starts from zero: I read your story, define composition, and push detail to the level your piece deserves.",
     identityP3:

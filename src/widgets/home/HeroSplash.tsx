@@ -218,32 +218,11 @@ export function HeroSplash({
         <div className="glass-card relative overflow-hidden rounded-3xl p-5 md:p-8">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(520px_220px_at_10%_0%,rgba(168,85,247,0.2),transparent_58%),radial-gradient(620px_260px_at_100%_100%,rgba(124,58,237,0.16),transparent_60%)]" />
           <div className="relative z-10">
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr] lg:items-end">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-200/80">
-                  {t("identityTag")}
-                </p>
-                <h2 className="typo-section mt-2 max-w-4xl">{t("identityTitle")}</h2>
-                <p className="typo-body mt-3 max-w-3xl">{t("identityP1")}</p>
-                <p className="typo-body mt-2 max-w-3xl">{t("identityP2")}</p>
-                <p className="typo-body mt-2 max-w-3xl text-zinc-300">{t("identityP3")}</p>
-              </div>
-
-              <div className="grid gap-2.5">
-                <article className="rounded-2xl border border-white/12 bg-black/30 p-3.5">
-                  <p className="typo-tech text-violet-200">{t("identityCard1Title")}</p>
-                  <p className="mt-1.5 text-sm text-zinc-200">{t("identityCard1Body")}</p>
-                </article>
-                <article className="rounded-2xl border border-white/12 bg-black/30 p-3.5">
-                  <p className="typo-tech text-violet-200">{t("identityCard2Title")}</p>
-                  <p className="mt-1.5 text-sm text-zinc-200">{t("identityCard2Body")}</p>
-                </article>
-                <article className="rounded-2xl border border-violet-400/25 bg-violet-500/10 p-3.5">
-                  <p className="typo-tech text-violet-100">{t("identityCard3Title")}</p>
-                  <p className="mt-1.5 text-sm text-violet-100/90">{t("identityCard3Body")}</p>
-                </article>
-              </div>
-            </div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-200/80">
+              {t("identityTag")}
+            </p>
+            <h2 className="typo-section mt-2 max-w-4xl">{t("identityTitle")}</h2>
+            <p className="typo-body mt-3 max-w-3xl text-zinc-200">{t("identityP1")}</p>
 
             <MalianteoIntroCarousel />
           </div>

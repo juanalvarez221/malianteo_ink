@@ -15,21 +15,20 @@ import {
 import { AppShell } from "@/widgets/layout/AppShell";
 import { Card } from "@/shared/ui/Card";
 import { cn } from "@/shared/lib/cn";
-
-type QuoteStatus =
-  | "Pendiente de Ajuste"
-  | "Esperando Confirmacion"
-  | "Enviada"
-  | "Pagada/Agendada";
-
-type QuoteRequest = {
-  id: string;
-  client: string;
-  idea: string;
-  proposedPrice: number;
-  proposedHours: number;
-  status: QuoteStatus;
-};
+import {
+  addSmartQuoteRequest,
+  getSmartQuoteRequests,
+  type SmartQuoteRequest,
+  type SmartQuoteStatus,
+  updateSmartQuoteRequest,
+} from "@/shared/lib/smartQuotes";
+import {
+  addDesignHistoryEntries,
+  getDesignHistoryEntries,
+  type DesignHistoryEntry,
+  type DesignHistoryKind,
+  type DesignTargetType,
+} from "@/shared/lib/designHistory";
 
 type ExternalProject = {
   id: string;
@@ -44,40 +43,13 @@ type AssetItem = {
   linkedTo: string;
 };
 
-const STATUS_STYLES: Record<QuoteStatus, string> = {
+const STATUS_STYLES: Record<SmartQuoteStatus, string> = {
   "Pendiente de Ajuste": "border-amber-500/30 bg-amber-500/10 text-amber-200",
   "Esperando Confirmacion":
     "border-sky-500/30 bg-sky-500/10 text-sky-200",
   Enviada: "border-violet-500/30 bg-violet-600/15 text-violet-100",
   "Pagada/Agendada": "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
 };
-
-const INITIAL_QUOTES: QuoteRequest[] = [
-  {
-    id: "Q-301",
-    client: "Sara O.",
-    idea: "Rosa oscura en antebrazo",
-    proposedPrice: 540000,
-    proposedHours: 4,
-    status: "Pendiente de Ajuste",
-  },
-  {
-    id: "Q-302",
-    client: "Daniel R.",
-    idea: "Blackwork geométrico pecho",
-    proposedPrice: 980000,
-    proposedHours: 7,
-    status: "Esperando Confirmacion",
-  },
-  {
-    id: "Q-303",
-    client: "Laura M.",
-    idea: "Cover-up realista de hombro",
-    proposedPrice: 1200000,
-    proposedHours: 9,
-    status: "Enviada",
-  },
-];
 
 const CLIENT_CRM = [
   {
@@ -102,10 +74,117 @@ const money = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
 });
 
+function sanitizePhone(rawPhone: string) {
+  return rawPhone.replace(/[^\d]/g, "");
+}
+
+function extractClosestSessions(text: string) {
+  const nums = text.match(/\d+/g)?.map(Number) ?? [];
+  if (!nums.length) return 1;
+  if (nums.length === 1) return nums[0];
+  return Math.round((nums[0] + nums[1]) / 2);
+}
+
+function estimateImageCard(
+  quote: SmartQuoteRequest,
+  sessionPrice: number,
+  sessionsCount: number,
+  total: number,
+) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1200;
+  canvas.height = 1600;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, "#09090b");
+  gradient.addColorStop(1, "#12101a");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "rgba(139,92,246,0.25)";
+  ctx.beginPath();
+  ctx.arc(980, 140, 260, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 58px Inter, sans-serif";
+  ctx.fillText("MALIANTEO INK", 70, 120);
+
+  ctx.fillStyle = "#c4b5fd";
+  ctx.font = "600 36px Inter, sans-serif";
+  ctx.fillText("Cotizacion Profesional", 70, 180);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.16)";
+  ctx.strokeRect(60, 240, 1080, 1260);
+
+  const rows = [
+    `Cliente: ${quote.clientName}`,
+    `Telefono: ${quote.phone}`,
+    `Tamano: ${quote.size}`,
+    `Zona: ${quote.zone}`,
+    `Estilo: ${quote.style}`,
+    `Sesiones: ${sessionsCount} (estimacion cercana)`,
+    `Valor por sesion: ${money.format(sessionPrice)}`,
+    `Total proyectado: ${money.format(total)}`,
+    `Notas: ${quote.notes || "Sin notas adicionales"}`,
+  ];
+
+  let y = 320;
+  ctx.fillStyle = "#e5e7eb";
+  rows.forEach((line, index) => {
+    ctx.font = index === 7 ? "700 40px Inter, sans-serif" : "500 34px Inter, sans-serif";
+    ctx.fillText(line, 95, y);
+    y += 118;
+  });
+
+  ctx.fillStyle = "rgba(255,255,255,0.65)";
+  ctx.font = "500 28px Inter, sans-serif";
+  ctx.fillText(
+    `Generada: ${new Date().toLocaleString("es-CO", {
+      dateStyle: "short",
+      timeStyle: "short",
+    })}`,
+    95,
+    1460,
+  );
+
+  return canvas.toDataURL("image/png");
+}
+
+async function shareImageIfPossible(dataUrl: string, filename: string, text: string) {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  const file = new File([blob], filename, { type: "image/png" });
+
+  if (
+    typeof navigator !== "undefined" &&
+    "share" in navigator &&
+    "canShare" in navigator &&
+    navigator.canShare?.({ files: [file] })
+  ) {
+    await navigator.share({
+      title: "Cotizacion Malianteo Ink",
+      text,
+      files: [file],
+    });
+    return true;
+  }
+
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  link.click();
+  return false;
+}
+
 export function MalianteoAdminDashboard() {
-  const [quotes, setQuotes] = useState<QuoteRequest[]>(INITIAL_QUOTES);
+  const [quotes, setQuotes] = useState<SmartQuoteRequest[]>(() =>
+    getSmartQuoteRequests(),
+  );
   const [adjustments, setAdjustments] = useState<
-    Record<string, { price: number; hours: number }>
+    Record<string, { sessionPrice: number; sessionsCount: number }>
   >({});
   const [externalProjects, setExternalProjects] = useState<ExternalProject[]>([
     {
@@ -133,40 +212,97 @@ export function MalianteoAdminDashboard() {
   const [lastConsentSent, setLastConsentSent] = useState<string>("");
   const [agendaVisible, setAgendaVisible] = useState(false);
   const [remindersSent, setRemindersSent] = useState(0);
+  const [designHistory, setDesignHistory] = useState<DesignHistoryEntry[]>(() =>
+    getDesignHistoryEntries(),
+  );
+  const [designForm, setDesignForm] = useState<{
+    targetType: DesignTargetType;
+    targetId: string;
+    targetLabel: string;
+    kind: DesignHistoryKind;
+    notes: string;
+  }>({
+    targetType: "Cliente",
+    targetId: "",
+    targetLabel: "",
+    kind: "Foto base",
+    notes: "",
+  });
 
   const pendingQuotes = useMemo(
     () => quotes.filter((q) => q.status !== "Pagada/Agendada").length,
     [quotes],
   );
+  const designTargets = useMemo(() => {
+    const clientTargets = quotes.map((quote) => ({
+      id: quote.id,
+      label: `${quote.clientName} (${quote.id})`,
+      type: "Cliente" as const,
+    }));
+    const projectTargets = externalProjects.map((project) => ({
+      id: project.id,
+      label: `${project.project} (${project.client})`,
+      type: "Proyecto" as const,
+    }));
+    return [...clientTargets, ...projectTargets];
+  }, [quotes, externalProjects]);
 
   const totalSupplies = inkCost + needleCost + otherSupplies;
   const netProfit = quoteValue - totalSupplies;
   const margin = quoteValue > 0 ? (netProfit / quoteValue) * 100 : 0;
 
-  const updateAdjustment = (id: string, key: "price" | "hours", value: number) => {
+  const persistAndSetQuotes = (next: SmartQuoteRequest[]) => {
+    setQuotes(next);
+  };
+
+  const updateAdjustment = (
+    id: string,
+    key: "sessionPrice" | "sessionsCount",
+    value: number,
+  ) => {
+    const quote = quotes.find((q) => q.id === id);
+    if (!quote) return;
+    const defaultSessions = extractClosestSessions(quote.estimateSessions);
     setAdjustments((prev) => ({
       ...prev,
       [id]: {
-        price: prev[id]?.price ?? quotes.find((q) => q.id === id)?.proposedPrice ?? 0,
-        hours: prev[id]?.hours ?? quotes.find((q) => q.id === id)?.proposedHours ?? 0,
+        sessionPrice: prev[id]?.sessionPrice ?? quote.adminSessionPrice ?? 1_500_000,
+        sessionsCount: prev[id]?.sessionsCount ?? quote.adminSessionCount ?? defaultSessions,
         [key]: value,
       },
     }));
   };
 
-  const adjustAndSend = (id: string) => {
-    setQuotes((prev) =>
-      prev.map((quote) => {
-        if (quote.id !== id) return quote;
-        const adjusted = adjustments[id];
-        return {
-          ...quote,
-          proposedPrice: adjusted?.price ?? quote.proposedPrice,
-          proposedHours: adjusted?.hours ?? quote.proposedHours,
-          status: "Enviada",
-        };
-      }),
-    );
+  const updateQuoteStatus = (id: string, status: SmartQuoteStatus) => {
+    const next = updateSmartQuoteRequest(id, { status });
+    persistAndSetQuotes(next);
+  };
+
+  const adjustAndSendWhatsApp = async (quote: SmartQuoteRequest) => {
+    const adjusted = adjustments[quote.id];
+    const sessionPrice = adjusted?.sessionPrice ?? quote.adminSessionPrice ?? 1_500_000;
+    const sessionsCount =
+      adjusted?.sessionsCount ??
+      quote.adminSessionCount ??
+      extractClosestSessions(quote.estimateSessions);
+    const total = sessionPrice * sessionsCount;
+
+    const next = updateSmartQuoteRequest(quote.id, {
+      adminSessionPrice: sessionPrice,
+      adminSessionCount: sessionsCount,
+      status: "Enviada",
+    });
+    persistAndSetQuotes(next);
+
+    const shortMessage = `Hola ${quote.clientName}, espero que estes muy bien. Te comparto tu cotizacion profesional de Malianteo Ink: ${sessionsCount} sesiones aprox con un valor de ${money.format(sessionPrice)} por sesion (total ${money.format(total)}). Quedo atento para agendarte con toda la energia.`;
+
+    const card = estimateImageCard(quote, sessionPrice, sessionsCount, total);
+    if (card) {
+      await shareImageIfPossible(card, `cotizacion-${quote.id}.png`, shortMessage);
+    }
+
+    const waLink = `https://wa.me/${sanitizePhone(quote.phone)}?text=${encodeURIComponent(shortMessage)}`;
+    window.open(waLink, "_blank", "noopener,noreferrer");
   };
 
   const addExternalProject = () => {
@@ -212,17 +348,23 @@ export function MalianteoAdminDashboard() {
   };
 
   const addManualQuote = () => {
-    setQuotes((prev) => [
-      {
-        id: `Q-${400 + prev.length}`,
-        client: "Cliente manual",
-        idea: "Proyecto fuera de cotizador",
-        proposedPrice: 650000,
-        proposedHours: 5,
-        status: "Pendiente de Ajuste",
-      },
-      ...prev,
-    ]);
+    const manual: SmartQuoteRequest = {
+      id: `SQ-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      clientName: "Cliente manual",
+      phone: "573000000000",
+      email: "manual@cliente.com",
+      size: "Mediano",
+      zone: "Brazo",
+      style: "Realismo oscuro",
+      notes: "Proyecto fuera de cotizador",
+      estimateSessions: "2 a 3 sesiones",
+      estimatePerSession: "$1,5M - $1,8M COP",
+      estimateTotal: "$3M - $5,4M COP",
+      status: "Pendiente de Ajuste",
+    };
+    addSmartQuoteRequest(manual);
+    setQuotes(getSmartQuoteRequests());
   };
 
   const addFlashFromQuickAction = () => {
@@ -236,6 +378,24 @@ export function MalianteoAdminDashboard() {
     ]);
   };
 
+  const handleDesignUpload = (files: FileList | null) => {
+    if (!files?.length || !designForm.targetId || !designForm.targetLabel) return;
+    const now = new Date().toISOString();
+    const entries: DesignHistoryEntry[] = Array.from(files).map((file, index) => ({
+      id: `DH-${Date.now()}-${index}`,
+      createdAt: now,
+      targetType: designForm.targetType,
+      targetId: designForm.targetId,
+      targetLabel: designForm.targetLabel,
+      kind: designForm.kind,
+      fileName: file.name,
+      notes: designForm.notes.trim(),
+    }));
+    addDesignHistoryEntries(entries);
+    setDesignHistory(getDesignHistoryEntries());
+    setDesignForm((prev) => ({ ...prev, notes: "" }));
+  };
+
   const sendConsent = () => {
     const date = new Date().toLocaleString("es-CO", {
       dateStyle: "short",
@@ -244,91 +404,98 @@ export function MalianteoAdminDashboard() {
     setLastConsentSent(`${selectedClient} - ${date}`);
   };
 
+  const sentQuotes = quotes.filter((quote) => quote.status === "Enviada").length;
+  const bookedQuotes = quotes.filter((quote) => quote.status === "Pagada/Agendada").length;
+
   return (
     <AppShell>
-      <div className="space-y-4">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.18em] text-violet-200/70 uppercase">
+      <div className="space-y-4 pb-2">
+        <Card>
+          <div className="p-4 sm:p-5">
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-violet-200/80 uppercase">
               Vista Admin
             </p>
-            <h1 className="mt-1 text-2xl font-semibold text-zinc-50">
+            <h1 className="mt-1 text-2xl font-semibold text-zinc-50 sm:text-3xl">
               Malianteo Dash
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-300">
-              Centro operativo para cotizaciones, agenda, activos creativos y
-              seguimiento del cliente en una sola vista.
+            <p className="mt-2 text-sm text-zinc-300">
+              Gestiona cotizaciones, flujo creativo del iPad y operación diaria
+              desde una vista unificada y profesional.
             </p>
-          </div>
-        </header>
-
-        <Card>
-          <div className="p-4">
-            <p className="text-xs font-semibold tracking-[0.16em] text-zinc-400 uppercase">
-              Quick actions
-            </p>
-            <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-              <button
-                onClick={addManualQuote}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-violet-500/30 bg-violet-600/15 px-3 py-2 text-sm font-semibold text-violet-100 transition hover:bg-violet-600/25"
-              >
-                <Plus className="h-4 w-4" /> Nueva Cotizacion Manual
-              </button>
-              <button
-                onClick={addFlashFromQuickAction}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
-              >
-                <ImagePlus className="h-4 w-4" /> Subir Diseno Flash
-              </button>
-              <button
-                onClick={() => setAgendaVisible((v) => !v)}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
-              >
-                <CalendarDays className="h-4 w-4" /> Ver Agenda del Dia
-              </button>
-              <button
-                onClick={() => setRemindersSent((n) => n + 1)}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
-              >
-                <MessageSquareShare className="h-4 w-4" /> Enviar Recordatorio
-              </button>
-            </div>
-            <div className="mt-2 text-xs text-zinc-400">
-              Recordatorios enviados hoy: {remindersSent}
-            </div>
           </div>
         </Card>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Card>
-            <div className="p-4">
-              <p className="text-xs text-zinc-400">Solicitudes activas</p>
-              <p className="mt-1 text-2xl font-semibold text-zinc-50">{pendingQuotes}</p>
+            <div className="p-3">
+              <p className="text-[11px] text-zinc-400">Solicitudes</p>
+              <p className="mt-1 text-xl font-semibold text-zinc-50">{pendingQuotes}</p>
             </div>
           </Card>
           <Card>
-            <div className="p-4">
-              <p className="text-xs text-zinc-400">Rentabilidad actual</p>
-              <p className="mt-1 text-2xl font-semibold text-zinc-50">
+            <div className="p-3">
+              <p className="text-[11px] text-zinc-400">Enviadas</p>
+              <p className="mt-1 text-xl font-semibold text-zinc-50">{sentQuotes}</p>
+            </div>
+          </Card>
+          <Card>
+            <div className="p-3">
+              <p className="text-[11px] text-zinc-400">Agendadas</p>
+              <p className="mt-1 text-xl font-semibold text-zinc-50">{bookedQuotes}</p>
+            </div>
+          </Card>
+          <Card>
+            <div className="p-3">
+              <p className="text-[11px] text-zinc-400">Margen actual</p>
+              <p className="mt-1 text-xl font-semibold text-zinc-50">
                 {margin.toFixed(1)}%
-              </p>
-            </div>
-          </Card>
-          <Card>
-            <div className="p-4">
-              <p className="text-xs text-zinc-400">Agenda del dia</p>
-              <p className="mt-1 text-2xl font-semibold text-zinc-50">
-                {agendaVisible ? "Visible" : "Oculta"}
               </p>
             </div>
           </Card>
         </div>
 
+        <Card>
+          <div className="p-4 sm:p-5">
+            <p className="text-xs font-semibold tracking-[0.14em] text-zinc-400 uppercase">
+              Quick Actions
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <button
+                onClick={addManualQuote}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-violet-500/30 bg-violet-600/15 px-3 py-2.5 text-sm font-semibold text-violet-100 transition hover:bg-violet-600/25"
+              >
+                <Plus className="h-4 w-4" /> Nueva Cotizacion
+              </button>
+              <button
+                onClick={addFlashFromQuickAction}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
+              >
+                <ImagePlus className="h-4 w-4" /> Subir Flash
+              </button>
+              <button
+                onClick={() => setAgendaVisible((v) => !v)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
+              >
+                <CalendarDays className="h-4 w-4" /> Agenda del Dia
+              </button>
+              <button
+                onClick={() => setRemindersSent((n) => n + 1)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
+              >
+                <MessageSquareShare className="h-4 w-4" /> Enviar Recordatorio
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-zinc-400">
+              Recordatorios enviados hoy: {remindersSent}
+            </p>
+          </div>
+        </Card>
+
         {agendaVisible ? (
           <Card>
-            <div className="p-4">
+            <div className="p-4 sm:p-5">
               <h2 className="text-sm font-semibold text-zinc-50">Agenda de hoy</h2>
-              <div className="mt-3 space-y-2 text-sm text-zinc-300">
+              <div className="mt-2 space-y-1.5 text-sm text-zinc-300">
                 <p>10:00 - Revision diseno Laura M.</p>
                 <p>13:00 - Sesion 1 blackwork Daniel R.</p>
                 <p>16:30 - Follow-up cicatrizacion Sara O.</p>
@@ -337,335 +504,509 @@ export function MalianteoAdminDashboard() {
           </Card>
         ) : null}
 
-        <Card>
-          <div className="p-4">
-            <div className="flex items-center gap-2">
-              <CircleDollarSign className="h-4 w-4 text-violet-300" />
-              <h2 className="text-sm font-semibold text-zinc-50">
-                Gestion de Cotizaciones Inteligentes
-              </h2>
-            </div>
-            <div className="mt-3 space-y-3">
-              {quotes.map((quote) => (
-                <div
-                  key={quote.id}
-                  className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-100">
-                        {quote.client} - {quote.id}
-                      </p>
-                      <p className="text-xs text-zinc-400">{quote.idea}</p>
-                    </div>
-                    <span
-                      className={cn(
-                        "rounded-full border px-2 py-1 text-xs font-semibold",
-                        STATUS_STYLES[quote.status],
-                      )}
-                    >
-                      {quote.status}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 grid gap-2 md:grid-cols-3">
-                    <label className="rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-xs text-zinc-300">
-                      Precio (COP)
-                      <input
-                        type="number"
-                        value={adjustments[quote.id]?.price ?? quote.proposedPrice}
-                        onChange={(event) =>
-                          updateAdjustment(quote.id, "price", Number(event.target.value))
-                        }
-                        className="mt-1 w-full bg-transparent text-sm font-semibold text-zinc-50 outline-none"
-                      />
-                    </label>
-                    <label className="rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-xs text-zinc-300">
-                      Tiempo (horas)
-                      <input
-                        type="number"
-                        value={adjustments[quote.id]?.hours ?? quote.proposedHours}
-                        onChange={(event) =>
-                          updateAdjustment(quote.id, "hours", Number(event.target.value))
-                        }
-                        className="mt-1 w-full bg-transparent text-sm font-semibold text-zinc-50 outline-none"
-                      />
-                    </label>
-                    <label className="rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-xs text-zinc-300">
-                      Estado
-                      <select
-                        value={quote.status}
-                        onChange={(event) =>
-                          setQuotes((prev) =>
-                            prev.map((item) =>
-                              item.id === quote.id
-                                ? {
-                                    ...item,
-                                    status: event.target.value as QuoteStatus,
-                                  }
-                                : item,
-                            ),
-                          )
-                        }
-                        className="mt-1 w-full bg-transparent text-sm font-semibold text-zinc-50 outline-none"
-                      >
-                        {Object.keys(STATUS_STYLES).map((status) => (
-                          <option key={status} value={status} className="bg-zinc-900">
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      onClick={() => adjustAndSend(quote.id)}
-                      className="inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-600/15 px-3 py-2 text-xs font-semibold text-violet-100 transition hover:bg-violet-600/25"
-                    >
-                      <Send className="h-3.5 w-3.5" /> Ajustar y Enviar
-                    </button>
-                  </div>
+        <div className="grid gap-3 xl:grid-cols-[1.35fr_.95fr]">
+          <div className="space-y-3">
+            <Card>
+              <div className="p-4 sm:p-5">
+                <div className="flex items-center gap-2">
+                  <CircleDollarSign className="h-4 w-4 text-violet-300" />
+                  <h2 className="text-sm font-semibold text-zinc-50">
+                    Cotizaciones Inteligentes
+                  </h2>
                 </div>
-              ))}
-            </div>
-          </div>
-        </Card>
+                <p className="mt-1 text-xs text-zinc-400">
+                  Ajusta precio fijo por sesion, numero de sesiones y enviala por
+                  WhatsApp en un clic.
+                </p>
 
-        <div className="grid gap-3 xl:grid-cols-2">
-          <Card>
-            <div className="p-4">
-              <h2 className="text-sm font-semibold text-zinc-50">
-                Fuera de Plataforma (Proyectos Externos)
-              </h2>
-              <div className="mt-3 grid gap-2">
-                <input
-                  placeholder="Cliente"
-                  value={externalForm.client}
-                  onChange={(event) =>
-                    setExternalForm((prev) => ({ ...prev, client: event.target.value }))
-                  }
-                  className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
-                />
-                <input
-                  placeholder="Proyecto"
-                  value={externalForm.project}
-                  onChange={(event) =>
-                    setExternalForm((prev) => ({ ...prev, project: event.target.value }))
-                  }
-                  className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
-                />
-                <input
-                  type="date"
-                  value={externalForm.sessionDate}
-                  onChange={(event) =>
-                    setExternalForm((prev) => ({
-                      ...prev,
-                      sessionDate: event.target.value,
-                    }))
-                  }
-                  className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none"
-                />
-                <button
-                  onClick={addExternalProject}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-white/10"
-                >
-                  <Plus className="h-4 w-4" /> Crear Proyecto Externo
-                </button>
-              </div>
+                <div className="mt-3 space-y-3">
+                  {quotes.length ? (
+                    quotes.map((quote) => {
+                      const sessionsDefault =
+                        quote.adminSessionCount ??
+                        adjustments[quote.id]?.sessionsCount ??
+                        extractClosestSessions(quote.estimateSessions);
+                      const priceDefault =
+                        quote.adminSessionPrice ??
+                        adjustments[quote.id]?.sessionPrice ??
+                        1_500_000;
 
-              <div className="mt-3 space-y-2">
-                {externalProjects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm"
-                  >
-                    <p className="font-semibold text-zinc-100">{project.project}</p>
-                    <p className="text-xs text-zinc-400">
-                      {project.client} - {project.sessionDate}
+                      return (
+                        <div
+                          key={quote.id}
+                          className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-zinc-100">
+                                {quote.clientName} - {quote.id}
+                              </p>
+                              <p className="text-xs text-zinc-400">
+                                {quote.phone} - {quote.email}
+                              </p>
+                            </div>
+                            <span
+                              className={cn(
+                                "rounded-full border px-2 py-1 text-xs font-semibold",
+                                STATUS_STYLES[quote.status],
+                              )}
+                            >
+                              {quote.status}
+                            </span>
+                          </div>
+
+                          <div className="mt-3 grid gap-2 rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-zinc-300 sm:grid-cols-2">
+                            <p>
+                              Tamano: <span className="text-zinc-100">{quote.size}</span>
+                            </p>
+                            <p>
+                              Zona: <span className="text-zinc-100">{quote.zone}</span>
+                            </p>
+                            <p>
+                              Estilo: <span className="text-zinc-100">{quote.style}</span>
+                            </p>
+                            <p>
+                              Estimado inicial:{" "}
+                              <span className="text-zinc-100">{quote.estimateTotal}</span>
+                            </p>
+                            <p className="sm:col-span-2">
+                              Notas:{" "}
+                              <span className="text-zinc-100">
+                                {quote.notes || "Sin notas"}
+                              </span>
+                            </p>
+                          </div>
+
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                            <label className="rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-xs text-zinc-300">
+                              Precio fijo por sesion (COP)
+                              <input
+                                type="number"
+                                value={priceDefault}
+                                onChange={(event) =>
+                                  updateAdjustment(
+                                    quote.id,
+                                    "sessionPrice",
+                                    Number(event.target.value),
+                                  )
+                                }
+                                className="mt-1 w-full bg-transparent text-sm font-semibold text-zinc-50 outline-none"
+                              />
+                            </label>
+                            <label className="rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-xs text-zinc-300">
+                              Numero de sesiones
+                              <input
+                                type="number"
+                                value={sessionsDefault}
+                                onChange={(event) =>
+                                  updateAdjustment(
+                                    quote.id,
+                                    "sessionsCount",
+                                    Number(event.target.value),
+                                  )
+                                }
+                                className="mt-1 w-full bg-transparent text-sm font-semibold text-zinc-50 outline-none"
+                              />
+                            </label>
+                            <label className="rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-xs text-zinc-300 sm:col-span-2 lg:col-span-1">
+                              Estado
+                              <select
+                                value={quote.status}
+                                onChange={(event) =>
+                                  updateQuoteStatus(
+                                    quote.id,
+                                    event.target.value as SmartQuoteStatus,
+                                  )
+                                }
+                                className="mt-1 w-full bg-transparent text-sm font-semibold text-zinc-50 outline-none"
+                              >
+                                {Object.keys(STATUS_STYLES).map((status) => (
+                                  <option
+                                    key={status}
+                                    value={status}
+                                    className="bg-zinc-900"
+                                  >
+                                    {status}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+
+                          <button
+                            onClick={() => adjustAndSendWhatsApp(quote)}
+                            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-violet-500/30 bg-violet-600/15 px-3 py-2.5 text-xs font-semibold text-violet-100 transition hover:bg-violet-600/25 sm:w-auto"
+                          >
+                            <Send className="h-3.5 w-3.5" /> Ajustar y enviar por
+                            WhatsApp
+                          </button>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-400">
+                      Aun no hay cotizaciones registradas. Completa una
+                      cotizacion publica para verla aqui.
                     </p>
-                  </div>
-                ))}
+                  )}
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
 
-          <Card>
-            <div className="p-4">
-              <h2 className="text-sm font-semibold text-zinc-50">
-                Integracion Creativa (iPad Workflow)
-              </h2>
-              <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/[0.03] px-3 py-4 text-sm text-zinc-300 hover:bg-white/[0.06]">
-                <ImagePlus className="h-4 w-4" />
-                Cargar sketches, referencias o diseno final
-                <input
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(event) => uploadAssets(event.target.files)}
-                />
-              </label>
-
-              <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto]">
-                <input
-                  placeholder="Nombre cliente o coleccion Flash"
-                  value={assetLink.target}
-                  onChange={(event) =>
-                    setAssetLink((prev) => ({ ...prev, target: event.target.value }))
-                  }
-                  className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
-                />
-                <select
-                  value={assetLink.mode}
-                  onChange={(event) =>
-                    setAssetLink((prev) => ({ ...prev, mode: event.target.value }))
-                  }
-                  className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-100 outline-none"
-                >
-                  <option value="Cliente">Cliente</option>
-                  <option value="Flash">Flash</option>
-                </select>
-              </div>
-              <button
-                onClick={linkLastAsset}
-                className="mt-2 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-zinc-100 transition hover:bg-white/10"
-              >
-                Vincular ultimo asset
-              </button>
-
-              <div className="mt-3 space-y-2">
-                {assets.map((asset) => (
-                  <div
-                    key={asset.id}
-                    className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2"
-                  >
-                    <p className="text-sm font-medium text-zinc-100">{asset.name}</p>
-                    <p className="text-xs text-zinc-400">{asset.linkedTo}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <div className="grid gap-3 xl:grid-cols-2">
-          <Card>
-            <div className="p-4">
-              <div className="flex items-center gap-2">
-                <UserRound className="h-4 w-4 text-violet-300" />
-                <h2 className="text-sm font-semibold text-zinc-50">CRM de Tatuajes</h2>
-              </div>
-              <div className="mt-3 space-y-2">
-                {CLIENT_CRM.map((client) => (
-                  <div
-                    key={client.name}
-                    className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-3 text-sm"
-                  >
-                    <p className="font-semibold text-zinc-100">{client.name}</p>
-                    <p className="text-xs text-zinc-400">
-                      Piel: {client.skinType} - Alergias: {client.allergies}
-                    </p>
-                    <p className="text-xs text-zinc-500">
-                      {client.sessions} - Ultimo diseno: {client.lastDesign}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Card>
-
-          <Card>
-            <div className="p-4">
-              <div className="flex items-center gap-2">
-                <Clock3 className="h-4 w-4 text-violet-300" />
+            <Card>
+              <div className="p-4 sm:p-5">
                 <h2 className="text-sm font-semibold text-zinc-50">
-                  Calculadora de Rentabilidad
+                  Historial Creativo por Cliente/Proyecto
                 </h2>
-              </div>
-              <div className="mt-3 grid gap-2 md:grid-cols-2">
-                <label className="text-xs text-zinc-400">
-                  Valor cotizado
-                  <input
-                    type="number"
-                    value={quoteValue}
-                    onChange={(event) => setQuoteValue(Number(event.target.value))}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-sm text-zinc-100 outline-none"
-                  />
-                </label>
-                <label className="text-xs text-zinc-400">
-                  Costo tintas
-                  <input
-                    type="number"
-                    value={inkCost}
-                    onChange={(event) => setInkCost(Number(event.target.value))}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-sm text-zinc-100 outline-none"
-                  />
-                </label>
-                <label className="text-xs text-zinc-400">
-                  Costo agujas
-                  <input
-                    type="number"
-                    value={needleCost}
-                    onChange={(event) => setNeedleCost(Number(event.target.value))}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-sm text-zinc-100 outline-none"
-                  />
-                </label>
-                <label className="text-xs text-zinc-400">
-                  Otros insumos
-                  <input
-                    type="number"
-                    value={otherSupplies}
-                    onChange={(event) => setOtherSupplies(Number(event.target.value))}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-sm text-zinc-100 outline-none"
-                  />
-                </label>
-              </div>
-              <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
-                <p className="text-xs text-emerald-100/80">
-                  Ganancia neta estimada: {money.format(netProfit)}
+                <p className="mt-1 text-xs text-zinc-400">
+                  Centraliza foto base, boceto iPad, propuestas y diseno final.
                 </p>
-                <p className="text-sm font-semibold text-emerald-100">
-                  Margen: {margin.toFixed(1)}%
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
 
-        <Card>
-          <div className="p-4">
-            <div className="flex items-center gap-2">
-              <FileSignature className="h-4 w-4 text-violet-300" />
-              <h2 className="text-sm font-semibold text-zinc-50">
-                Consentimiento Digital
-              </h2>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <select
-                value={selectedClient}
-                onChange={(event) => setSelectedClient(event.target.value)}
-                className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-100 outline-none"
-              >
-                {CLIENT_CRM.map((client) => (
-                  <option key={client.name} value={client.name}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={sendConsent}
-                className="inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-600/15 px-3 py-2 text-sm font-semibold text-violet-100 transition hover:bg-violet-600/25"
-              >
-                <Send className="h-4 w-4" /> Enviar formulario legal
-              </button>
-            </div>
-            {lastConsentSent ? (
-              <p className="mt-2 text-xs text-zinc-400">
-                Ultimo consentimiento enviado: {lastConsentSent}
-              </p>
-            ) : null}
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <label className="text-xs text-zinc-400">
+                    Vincular a
+                    <select
+                      value={designForm.targetId}
+                      onChange={(event) => {
+                        const selected = designTargets.find(
+                          (target) => target.id === event.target.value,
+                        );
+                        setDesignForm((prev) => ({
+                          ...prev,
+                          targetId: selected?.id ?? "",
+                          targetLabel: selected?.label ?? "",
+                          targetType: selected?.type ?? "Cliente",
+                        }));
+                      }}
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none"
+                    >
+                      <option value="">Selecciona cliente o proyecto</option>
+                      {designTargets.map((target) => (
+                        <option key={target.id} value={target.id}>
+                          {target.type}: {target.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="text-xs text-zinc-400">
+                    Tipo de archivo
+                    <select
+                      value={designForm.kind}
+                      onChange={(event) =>
+                        setDesignForm((prev) => ({
+                          ...prev,
+                          kind: event.target.value as DesignHistoryKind,
+                        }))
+                      }
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none"
+                    >
+                      <option value="Foto base">Foto base</option>
+                      <option value="Boceto iPad">Boceto iPad</option>
+                      <option value="Propuesta">Propuesta</option>
+                      <option value="Diseno final">Diseno final</option>
+                    </select>
+                  </label>
+                </div>
+
+                <textarea
+                  value={designForm.notes}
+                  onChange={(event) =>
+                    setDesignForm((prev) => ({ ...prev, notes: event.target.value }))
+                  }
+                  placeholder="Notas del diseno, observaciones o cambios solicitados"
+                  className="mt-2 w-full resize-none rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+                  rows={3}
+                />
+
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/10">
+                    <ImagePlus className="h-4 w-4" />
+                    Subir desde iPad/galeria
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(event) => handleDesignUpload(event.target.files)}
+                    />
+                  </label>
+                  <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/10">
+                    <CalendarDays className="h-4 w-4" />
+                    Tomar foto directa
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(event) => handleDesignUpload(event.target.files)}
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  {designHistory.length ? (
+                    designHistory.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2"
+                      >
+                        <p className="text-sm font-semibold text-zinc-100">
+                          {entry.kind} - {entry.fileName}
+                        </p>
+                        <p className="text-xs text-zinc-400">
+                          {entry.targetType}: {entry.targetLabel}
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                          {new Date(entry.createdAt).toLocaleString("es-CO")}
+                        </p>
+                        {entry.notes ? (
+                          <p className="mt-1 text-xs text-zinc-300">{entry.notes}</p>
+                        ) : null}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-3 text-sm text-zinc-400">
+                      Todavia no hay disenos en historial.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </Card>
           </div>
-        </Card>
+
+          <div className="space-y-3">
+            <Card>
+              <div className="p-4 sm:p-5">
+                <h2 className="text-sm font-semibold text-zinc-50">
+                  Proyectos Externos
+                </h2>
+                <div className="mt-3 grid gap-2">
+                  <input
+                    placeholder="Cliente"
+                    value={externalForm.client}
+                    onChange={(event) =>
+                      setExternalForm((prev) => ({ ...prev, client: event.target.value }))
+                    }
+                    className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+                  />
+                  <input
+                    placeholder="Proyecto"
+                    value={externalForm.project}
+                    onChange={(event) =>
+                      setExternalForm((prev) => ({ ...prev, project: event.target.value }))
+                    }
+                    className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+                  />
+                  <input
+                    type="date"
+                    value={externalForm.sessionDate}
+                    onChange={(event) =>
+                      setExternalForm((prev) => ({
+                        ...prev,
+                        sessionDate: event.target.value,
+                      }))
+                    }
+                    className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none"
+                  />
+                  <button
+                    onClick={addExternalProject}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-semibold text-zinc-100 transition hover:bg-white/10"
+                  >
+                    <Plus className="h-4 w-4" /> Crear Proyecto
+                  </button>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  {externalProjects.map((project) => (
+                    <div
+                      key={project.id}
+                      className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2"
+                    >
+                      <p className="text-sm font-semibold text-zinc-100">{project.project}</p>
+                      <p className="text-xs text-zinc-400">
+                        {project.client} - {project.sessionDate}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="p-4 sm:p-5">
+                <h2 className="text-sm font-semibold text-zinc-50">
+                  Gestor de Assets (iPad)
+                </h2>
+                <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/[0.03] px-3 py-4 text-sm text-zinc-300 hover:bg-white/[0.06]">
+                  <ImagePlus className="h-4 w-4" />
+                  Cargar sketches, referencias o diseno final
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(event) => uploadAssets(event.target.files)}
+                  />
+                </label>
+                <div className="mt-3 grid gap-2">
+                  <input
+                    placeholder="Nombre cliente o coleccion Flash"
+                    value={assetLink.target}
+                    onChange={(event) =>
+                      setAssetLink((prev) => ({ ...prev, target: event.target.value }))
+                    }
+                    className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+                  />
+                  <select
+                    value={assetLink.mode}
+                    onChange={(event) =>
+                      setAssetLink((prev) => ({ ...prev, mode: event.target.value }))
+                    }
+                    className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-100 outline-none"
+                  >
+                    <option value="Cliente">Cliente</option>
+                    <option value="Flash">Flash</option>
+                  </select>
+                  <button
+                    onClick={linkLastAsset}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-semibold text-zinc-100 transition hover:bg-white/10"
+                  >
+                    Vincular ultimo asset
+                  </button>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  {assets.map((asset) => (
+                    <div
+                      key={asset.id}
+                      className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2"
+                    >
+                      <p className="text-sm font-medium text-zinc-100">{asset.name}</p>
+                      <p className="text-xs text-zinc-400">{asset.linkedTo}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="p-4 sm:p-5">
+                <div className="flex items-center gap-2">
+                  <UserRound className="h-4 w-4 text-violet-300" />
+                  <h2 className="text-sm font-semibold text-zinc-50">CRM de Tatuajes</h2>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {CLIENT_CRM.map((client) => (
+                    <div
+                      key={client.name}
+                      className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-3"
+                    >
+                      <p className="text-sm font-semibold text-zinc-100">{client.name}</p>
+                      <p className="text-xs text-zinc-400">
+                        Piel: {client.skinType} - Alergias: {client.allergies}
+                      </p>
+                      <p className="text-xs text-zinc-500">
+                        {client.sessions} - Ultimo diseno: {client.lastDesign}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="p-4 sm:p-5">
+                <div className="flex items-center gap-2">
+                  <Clock3 className="h-4 w-4 text-violet-300" />
+                  <h2 className="text-sm font-semibold text-zinc-50">
+                    Calculadora de Rentabilidad
+                  </h2>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <label className="text-xs text-zinc-400">
+                    Valor cotizado
+                    <input
+                      type="number"
+                      value={quoteValue}
+                      onChange={(event) => setQuoteValue(Number(event.target.value))}
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-sm text-zinc-100 outline-none"
+                    />
+                  </label>
+                  <label className="text-xs text-zinc-400">
+                    Costo tintas
+                    <input
+                      type="number"
+                      value={inkCost}
+                      onChange={(event) => setInkCost(Number(event.target.value))}
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-sm text-zinc-100 outline-none"
+                    />
+                  </label>
+                  <label className="text-xs text-zinc-400">
+                    Costo agujas
+                    <input
+                      type="number"
+                      value={needleCost}
+                      onChange={(event) => setNeedleCost(Number(event.target.value))}
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-sm text-zinc-100 outline-none"
+                    />
+                  </label>
+                  <label className="text-xs text-zinc-400">
+                    Otros insumos
+                    <input
+                      type="number"
+                      value={otherSupplies}
+                      onChange={(event) => setOtherSupplies(Number(event.target.value))}
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-sm text-zinc-100 outline-none"
+                    />
+                  </label>
+                </div>
+                <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+                  <p className="text-xs text-emerald-100/80">
+                    Ganancia neta estimada: {money.format(netProfit)}
+                  </p>
+                  <p className="text-sm font-semibold text-emerald-100">
+                    Margen: {margin.toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="p-4 sm:p-5">
+                <div className="flex items-center gap-2">
+                  <FileSignature className="h-4 w-4 text-violet-300" />
+                  <h2 className="text-sm font-semibold text-zinc-50">
+                    Consentimiento Digital
+                  </h2>
+                </div>
+                <div className="mt-3 grid gap-2">
+                  <select
+                    value={selectedClient}
+                    onChange={(event) => setSelectedClient(event.target.value)}
+                    className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-100 outline-none"
+                  >
+                    {CLIENT_CRM.map((client) => (
+                      <option key={client.name} value={client.name}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={sendConsent}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-violet-500/30 bg-violet-600/15 px-3 py-2.5 text-sm font-semibold text-violet-100 transition hover:bg-violet-600/25"
+                  >
+                    <Send className="h-4 w-4" /> Enviar formulario legal
+                  </button>
+                </div>
+                {lastConsentSent ? (
+                  <p className="mt-2 text-xs text-zinc-400">
+                    Ultimo consentimiento enviado: {lastConsentSent}
+                  </p>
+                ) : null}
+              </div>
+            </Card>
+          </div>
+        </div>
       </div>
     </AppShell>
   );

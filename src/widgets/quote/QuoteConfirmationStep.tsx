@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { QuoteShell } from "@/widgets/quote/QuoteShell";
 import { BadgeDollarSign, CheckCircle2, Sparkles } from "lucide-react";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
+import { getQuoteProfile } from "@/shared/lib/quoteProfile";
+import { addSmartQuoteRequest } from "@/shared/lib/smartQuotes";
 
 export function QuoteConfirmationStep({
   size,
@@ -22,7 +24,30 @@ export function QuoteConfirmationStep({
     total: string;
   };
 }) {
+  const router = useRouter();
   const { language, t } = useSiteLanguage();
+
+  const registerQuoteAndContinue = () => {
+    const profile = getQuoteProfile();
+    if (profile) {
+      addSmartQuoteRequest({
+        id: `SQ-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        clientName: profile.name,
+        phone: profile.phone,
+        email: profile.email,
+        size,
+        zone,
+        style,
+        notes: notes ?? "",
+        estimateSessions: estimate.sessions,
+        estimatePerSession: estimate.perSession,
+        estimateTotal: estimate.total,
+        status: "Pendiente de Ajuste",
+      });
+    }
+    router.push("/cotizacion/gracias");
+  };
 
   return (
     <QuoteShell brand="MALIANTEO">
@@ -93,12 +118,13 @@ export function QuoteConfirmationStep({
         </article>
 
         <article className="glass-card flex items-center rounded-2xl p-5 md:sticky md:top-24 md:h-fit">
-          <Link
-            href="/cotizacion/gracias"
+          <button
+            type="button"
+            onClick={registerQuoteAndContinue}
             className="typo-cta inline-flex w-full items-center justify-center gap-2 rounded-xl border border-violet-500/35 bg-gradient-to-r from-violet-700 to-fuchsia-600 px-5 py-4 text-white transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(139,92,246,0.35)] active:translate-y-0"
           >
             {t("quoteActionCta")}
-          </Link>
+          </button>
         </article>
       </section>
     </QuoteShell>
