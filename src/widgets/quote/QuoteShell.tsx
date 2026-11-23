@@ -27,6 +27,8 @@ import {
 } from "@/shared/lib/quoteFlow";
 import { HeroBrandTitle } from "@/widgets/home/HeroBrandTitle";
 import { cn } from "@/shared/lib/cn";
+import { QuoteProgress, type QuoteJourneyState } from "@/widgets/quote/QuoteProgress";
+import styles from "@/widgets/quote/QuoteFlow.module.css";
 
 async function copyText(value: string) {
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
@@ -50,11 +52,14 @@ export function QuoteShell({
   brand = BRAND.name,
   showGreeting = true,
   greetingKey = "quoteGreetStart",
+  journey,
 }: {
   children: React.ReactNode;
   brand?: string;
   showGreeting?: boolean;
   greetingKey?: SiteCopyKey;
+  /** Paso del recorrido: muestra la barra de progreso global en el header. */
+  journey?: QuoteJourneyState;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -251,7 +256,12 @@ export function QuoteShell({
   ] as const;
 
   return (
-    <div className="quote-shell relative isolate min-h-dvh overflow-hidden bg-background text-ivory">
+    <div
+      className={cn(
+        "quote-shell relative isolate min-h-svh overflow-hidden bg-background text-ivory",
+        styles.shell,
+      )}
+    >
       <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
         <video
           ref={videoRef}
@@ -268,7 +278,12 @@ export function QuoteShell({
       </div>
 
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/35 backdrop-blur-md">
-        <div className="relative flex w-full items-center justify-between px-4 py-4 sm:px-6 md:px-10">
+        <div
+          className={cn(
+            "relative flex w-full items-center justify-between px-4 sm:px-6 md:px-10",
+            journey ? "pb-2.5 pt-3.5" : "py-4",
+          )}
+        >
           <button
             type="button"
             onClick={goBack}
@@ -330,6 +345,7 @@ export function QuoteShell({
             </AnimatePresence>
           </div>
         </div>
+        {journey ? <QuoteProgress step={journey.step} sub={journey.sub} /> : null}
       </header>
 
       <AnimatePresence>

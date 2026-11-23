@@ -88,8 +88,8 @@ export default function CotizacionPage() {
 
   if (!ready) {
     return (
-      <QuoteShell showGreeting={false}>
-        <div className="flex min-h-[40dvh] items-center justify-center">
+      <QuoteShell showGreeting={false} journey={{ step: "contacto" }}>
+        <div className="flex min-h-[40svh] items-center justify-center">
           <p className="typo-tech text-sm uppercase tracking-[0.18em] text-zinc-400">
             {language === "en" ? "Loading…" : "Cargando…"}
           </p>
@@ -99,19 +99,12 @@ export default function CotizacionPage() {
   }
 
   return (
-    <QuoteShell>
+    <QuoteShell journey={{ step: "contacto" }}>
       <section className="relative mb-8">
         <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-violet-600/15 blur-[60px]" />
-        <p className="typo-tech mb-2 uppercase tracking-[0.16em] text-violet-200/85">
-          {t("quoteContactStep")}
-        </p>
-        <h2 className="typo-section quote-step-title">
-          {t("quoteContactTitle")}
-          <br />
-          <span className="bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-            {t("quoteContactTitle2")}
-          </span>
-        </h2>
+        <h1 className="typo-section quote-step-title">
+          {t("quoteContactTitle")} {t("quoteContactTitle2")}
+        </h1>
         <p className="typo-body mt-4 max-w-2xl leading-relaxed">
           {t("quoteContactBody")}
         </p>
@@ -119,15 +112,6 @@ export default function CotizacionPage() {
 
       <section className="mb-8">
         <div className="glass-card rounded-2xl p-5">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full border border-violet-500/30 bg-violet-600/10">
-              <span className="text-[10px] font-bold text-white">1</span>
-            </div>
-            <h3 className="typo-subtitle text-sm uppercase tracking-[0.14em] text-zinc-200">
-              {t("quoteContactCard")}
-            </h3>
-          </div>
-
           <div className="grid gap-4">
             <label className="space-y-2">
               <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-300">

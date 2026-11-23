@@ -1,169 +1,163 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Check, Loader2, MapPin, Monitor } from "lucide-react";
+import { Check, Loader2, MapPin, Video } from "lucide-react";
 import { QuoteShell } from "@/widgets/quote/QuoteShell";
+import { QuoteStepFooter } from "@/widgets/quote/QuoteStepFooter";
+import { fillCopy, useQuoteFlowCopy } from "@/widgets/quote/quoteFlowCopy";
+import styles from "@/widgets/quote/QuoteFlow.module.css";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
-import { getQuoteConnection, mapConnectionToSmartQuote } from "@/shared/lib/quoteConnection";
-import {
-  getQuoteDraft,
-  isLargeQuoteSize,
-  setQuoteCompletionType,
-} from "@/shared/lib/quoteDraft";
+import { getQuoteDraft, setQuoteCompletionType } from "@/shared/lib/quoteDraft";
 import { getQuoteProfile } from "@/shared/lib/quoteProfile";
+import { QUOTE_FLOW_PATHS } from "@/shared/lib/quoteFlow";
 import { useQuoteOnboardingGate } from "@/widgets/quote/useQuoteOnboardingGate";
-import {
-  addSmartQuoteRequest,
-  persistQuoteRequestToBackend,
-  type SmartQuoteRequest,
-} from "@/shared/lib/smartQuotes";
 import { getAdvisoryDurationMin } from "@/shared/lib/advisoryConfig";
 import type { AdvisoryMode, AdvisorySlot } from "@/shared/lib/advisoryTypes";
-import { formatDayLabel } from "@/shared/lib/advisorySlots";
-import { formatQuoteLocationLabel } from "@/widgets/quote/quoteBodyLocation";
-import { buildAdvisoryWhatsAppMessage, whatsappUrl } from "@/shared/config/brand";
-import { getStudioFullAddress } from "@/shared/config/studio";
+import {
+  buildAdvisoryWhatsAppMessage,
+  WHATSAPP_MESSAGES,
+  whatsappUrl,
+} from "@/shared/config/brand";
+import { draftHasLocation } from "@/widgets/quote/quoteBodyLocation";
+import {
+  buildQuoteBrief,
+  describeEstimateEs,
+  registerQuoteRequest,
+} from "@/widgets/quote/quoteSubmission";
 
-type DaySlots = {
-  date: string;
-  slots: AdvisorySlot[];
-};
+type DaySlots = { date: string; slots: AdvisorySlot[] };
 
-export function QuoteAdvisoryBookingStep({
-  mode,
-  size,
-}: {
-  mode: AdvisoryMode;
-  size: string;
-}) {
+function dayParts(dateKey: string, locale: string) {
+  // Mediodía UTC del día pedido: evita saltos de fecha por zona horaria.
+  const date = new Date(`${dateKey}T12:00:00Z`);
+  const format = (options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" })
+      .format(date)
+      .replace(".", "");
+  return {
+    week: format({ weekday: "short" }),
+    day: format({ day: "numeric" }),
+    month: format({ month: "short" }),
+  };
+}
+
+export function QuoteAdvisoryBookingStep({ mode: initialMode }: { mode: AdvisoryMode }) {
   const router = useRouter();
+  const copy = useQuoteFlowCopy();
+  const b = copy.booking;
   const { language, t } = useSiteLanguage();
-  const draft = getQuoteDraft();
-  const profile = getQuoteProfile();
-  const [days, setDays] = useState<DaySlots[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedSlot, setSelectedSlot] = useState<AdvisorySlot | null>(null);
-  const [slotsForSelectedDay, setSlotsForSelectedDay] = useState<AdvisorySlot[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [durationMin, setDurationMin] = useState(getAdvisoryDurationMin(mode));
+  const locale = language === "en" ? "en-US" : "es-CO";
   const gateReady = useQuoteOnboardingGate();
+
+  const [mode, setMode] = useState<AdvisoryMode>(initialMode);
+  const [days, setDays] = useState<DaySlots[]>([]);
+  const [durationMin, setDurationMin] = useState(getAdvisoryDurationMin(initialMode));
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [slots, setSlots] = useState<AdvisorySlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<AdvisorySlot | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const slotsRequestRef = useRef(0);
 
   useEffect(() => {
     if (!gateReady) return;
-    if (!isLargeQuoteSize(size)) {
-      router.replace(`/cotizacion/ubicacion?size=${encodeURIComponent(size)}`);
+    const draft = getQuoteDraft();
+    if (!draft?.size || !draftHasLocation(draft)) {
+      router.replace(QUOTE_FLOW_PATHS.quoteStart);
       return;
     }
-    const draft = getQuoteDraft();
-    if (!draft?.zone) {
-      router.replace(`/cotizacion/ubicacion?size=${encodeURIComponent(size)}`);
+    if (!draft.styleLikes?.length || !draft.artistReasons?.length) {
+      router.replace(QUOTE_FLOW_PATHS.inspiration);
     }
-  }, [gateReady, router, size]);
+  }, [gateReady, router]);
 
   const loadSlotsForDate = useCallback(
-    async (dateKey: string) => {
-      if (!dateKey) return;
+    async (dateKey: string, forMode: AdvisoryMode) => {
+      const requestId = ++slotsRequestRef.current;
       setSelectedDate(dateKey);
-      setLoadingSlots(true);
-      setError("");
       setSelectedSlot(null);
+      setLoadingSlots(true);
       try {
-        const response = await fetch(`/api/advisory/slots?mode=${mode}&date=${encodeURIComponent(dateKey)}`, {
-          cache: "no-store",
-        });
-        const payload = (await response.json()) as {
-          slots?: AdvisorySlot[];
-          error?: string;
-        };
-        if (!response.ok) {
-          throw new Error(payload.error ?? t("quoteAdvisoryBookingLoadError"));
-        }
-        const nextSlots = payload.slots ?? [];
-        setSlotsForSelectedDay(nextSlots);
-        setDays((current) =>
-          current.map((day) => (day.date === dateKey ? { ...day, slots: nextSlots } : day)),
+        const response = await fetch(
+          `/api/advisory/slots?mode=${forMode}&date=${encodeURIComponent(dateKey)}`,
+          { cache: "no-store" },
         );
-      } catch (loadError) {
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : t("quoteAdvisoryBookingLoadError"),
-        );
-        setSlotsForSelectedDay([]);
+        const payload = (await response.json()) as { slots?: AdvisorySlot[] };
+        if (!response.ok) throw new Error("slots");
+        if (requestId === slotsRequestRef.current) setSlots(payload.slots ?? []);
+      } catch {
+        if (requestId === slotsRequestRef.current) setSlots([]);
       } finally {
-        setLoadingSlots(false);
+        if (requestId === slotsRequestRef.current) setLoadingSlots(false);
       }
     },
-    [mode, t],
+    [],
   );
 
+  /** Vacía la agenda antes de pedir otra modalidad o reintentar. */
+  const resetSchedule = () => {
+    slotsRequestRef.current += 1;
+    setLoading(true);
+    setLoadError(false);
+    setDays([]);
+    setSlots([]);
+    setLoadingSlots(false);
+    setSelectedDate("");
+    setSelectedSlot(null);
+  };
+
+  // Días disponibles de la modalidad; se abre el primero para ahorrar un toque.
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      setError("");
+    (async () => {
       try {
-        const response = await fetch(`/api/advisory/slots?mode=${mode}`, {
-          cache: "no-store",
-        });
-        const payload = (await response.json()) as {
-          days?: DaySlots[];
-          durationMin?: number;
-          error?: string;
-        };
-        if (!response.ok) {
-          throw new Error(payload.error ?? t("quoteAdvisoryBookingLoadError"));
-        }
+        const response = await fetch(`/api/advisory/slots?mode=${mode}`, { cache: "no-store" });
+        const payload = (await response.json()) as { days?: DaySlots[]; durationMin?: number };
+        if (!response.ok) throw new Error("days");
+        if (cancelled) return;
         const nextDays = (payload.days ?? []).filter((day) => Boolean(day.date));
-        if (!cancelled) {
-          setDurationMin(payload.durationMin ?? getAdvisoryDurationMin(mode));
-          setDays(nextDays);
-          setSelectedDate("");
-          setSlotsForSelectedDay([]);
-          setSelectedSlot(null);
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : t("quoteAdvisoryBookingLoadError"),
-          );
-        }
+        setDurationMin(payload.durationMin ?? getAdvisoryDurationMin(mode));
+        setDays(nextDays);
+        if (nextDays[0]) void loadSlotsForDate(nextDays[0].date, mode);
+      } catch {
+        if (!cancelled) setLoadError(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
-    };
-    void load();
+    })();
     return () => {
       cancelled = true;
     };
-  }, [loadSlotsForDate, mode, t]);
+  }, [mode, reloadToken, loadSlotsForDate]);
+
+  const switchMode = (next: AdvisoryMode) => {
+    if (next === mode) return;
+    resetSchedule();
+    setMode(next);
+    setSubmitError("");
+    router.replace(`${QUOTE_FLOW_PATHS.booking}?mode=${next}`, { scroll: false });
+  };
+
+  const profileName = useMemo(() => getQuoteProfile()?.name ?? "", []);
 
   const confirmBooking = async () => {
-    if (!profile || !selectedSlot) return;
+    const profile = getQuoteProfile();
+    const draft = getQuoteDraft();
+    if (!profile || !draft) return;
+    if (!selectedSlot) {
+      setSubmitError(selectedDate ? b.pickTime : b.pickDay);
+      return;
+    }
     setSubmitting(true);
-    setError("");
-
+    setSubmitError("");
     try {
-      const connection = getQuoteConnection();
-      const connectionFields = connection
-        ? mapConnectionToSmartQuote(connection, t)
-        : {
-            connectionAftercare: undefined,
-            connectionValues: undefined,
-            connectionCollaboration: undefined,
-            connectionPurpose: undefined,
-          };
-      const zoneDisplay = formatQuoteLocationLabel(draft, t, {
-        zone: draft?.zone,
-        zoneOther: draft?.zoneOther,
-      });
-
+      const brief = buildQuoteBrief(draft, t);
+      const estimate = describeEstimateEs(brief.estimate);
       const response = await fetch("/api/advisory/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -173,245 +167,209 @@ export function QuoteAdvisoryBookingStep({
           clientName: profile.name,
           phone: profile.phone,
           email: profile.email,
-          projectNotes: draft?.notes ?? "",
-          size,
+          projectNotes: brief.notes,
+          size: brief.sizeLabelEs,
           brief: {
-            bodyZone: zoneDisplay,
-            referral: connectionFields.connectionAftercare,
-            personalValues: connectionFields.connectionValues,
-            collaborationMode: connectionFields.connectionCollaboration,
-            openNote: connectionFields.connectionPurpose,
+            bodyZone: brief.zoneLabel,
+            referral: brief.referral,
+            collaborationMode: brief.collaboration,
+            styleLikes: brief.styleLikes,
+            artistReasons: brief.artistReasons,
+            estimate: `${estimate.total} · ${estimate.sessions}`,
+            references: brief.referenceCount
+              ? `${brief.referenceCount} imagen(es), adjuntas en el correo del brief`
+              : undefined,
           },
         }),
       });
       const payload = (await response.json()) as {
-        ok?: boolean;
         booking?: { id: string; label: string; startsAt: string; meetingLink?: string };
         error?: string;
       };
-
       if (!response.ok || !payload.booking) {
-        throw new Error(payload.error ?? t("quoteAdvisoryBookingSubmitError"));
+        throw new Error(payload.error ?? b.submitError);
       }
 
-      const request: SmartQuoteRequest = {
-        id: `SQ-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        clientName: profile.name,
-        phone: profile.phone,
-        email: profile.email,
-        size,
-        zone: zoneDisplay,
-        style: "Por definir en asesoría",
-        notes: draft?.notes?.trim() ?? "",
-        ...connectionFields,
-        requiresAdvisory: true,
-        advisoryMode: mode,
-        advisoryScheduledAt: payload.booking.startsAt,
-        advisoryBookingId: payload.booking.id,
-        estimateSessions: "Por definir",
-        estimatePerSession: "Por definir",
-        estimateTotal: "Por definir en asesoría",
+      void registerQuoteRequest(brief, {
         status: "Asesoría Agendada",
-      };
-      addSmartQuoteRequest(request);
-      void persistQuoteRequestToBackend(request);
+        advisory: {
+          advisoryMode: mode,
+          advisoryScheduledAt: payload.booking.startsAt,
+          advisoryBookingId: payload.booking.id,
+        },
+      });
 
-      sessionStorage.setItem(
-        "quote_advisory_confirmation",
-        JSON.stringify({
-          label: payload.booking.label,
-          mode,
-          whatsappUrl: whatsappUrl(
-            buildAdvisoryWhatsAppMessage({
-              mode,
-              slotLabel: payload.booking.label,
-              clientName: profile.name,
-            }),
-          ),
-          meetingLink: payload.booking.meetingLink,
-        }),
-      );
-
+      try {
+        sessionStorage.setItem(
+          "quote_advisory_confirmation",
+          JSON.stringify({
+            label: payload.booking.label,
+            mode,
+            whatsappUrl: whatsappUrl(
+              buildAdvisoryWhatsAppMessage({
+                mode,
+                slotLabel: payload.booking.label,
+                clientName: profile.name,
+              }),
+            ),
+            meetingLink: payload.booking.meetingLink,
+          }),
+        );
+      } catch {
+        /* la página de gracias funciona sin este resumen */
+      }
       setQuoteCompletionType("asesoria");
       router.push("/cotizacion/gracias");
-    } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : t("quoteAdvisoryBookingSubmitError"),
-      );
-    } finally {
+    } catch (error) {
+      setSubmitError(error instanceof Error && error.message ? error.message : b.submitError);
       setSubmitting(false);
     }
   };
 
-  const modeTitle =
-    mode === "presencial" ? t("quoteAdvisoryPresencialTitle") : t("quoteAdvisoryVirtualTitle");
-  const hasSelectedDate = Boolean(selectedDate);
+  const whatsappHref = whatsappUrl(
+    profileName
+      ? WHATSAPP_MESSAGES.quoteInProgressNamed.replace("{name}", profileName)
+      : WHATSAPP_MESSAGES.quoteInProgress,
+  );
 
   return (
-    <QuoteShell greetingKey="quoteGreetAdvisoryBook">
-      <section className="relative mb-8">
-        <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-violet-600/15 blur-[60px]" />
-        <p className="typo-tech mb-2 uppercase tracking-[0.16em] text-violet-200/85">
-          {t("quoteAdvisoryBookingStep")}
-        </p>
-        <h2 className="typo-section text-[2rem] leading-[1.05] md:text-[2.8rem]">
-          {t("quoteAdvisoryBookingTitle")}
-        </h2>
-        <p className="typo-body mt-4 max-w-2xl leading-relaxed">{t("quoteAdvisoryBookingBody")}</p>
+    <QuoteShell showGreeting={false} journey={{ step: "agenda" }}>
+      <div className={styles.column}>
+        <header className={styles.head}>
+          <h1 className="typo-section quote-step-title">{b.title}</h1>
+          <p className={styles.lead}>{fillCopy(b.body, { minutes: durationMin })}</p>
+        </header>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-zinc-500/30 bg-zinc-600/10 px-4 py-2 text-sm text-zinc-100">
-            {mode === "presencial" ? (
-              <MapPin className="h-4 w-4" />
-            ) : (
-              <Monitor className="h-4 w-4" />
-            )}
-            {modeTitle}
-          </span>
-          <span className="typo-tech rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs uppercase tracking-[0.14em] text-zinc-300">
-            {t("quoteAdvisoryBookingDuration").replace("{minutes}", String(durationMin))}
-          </span>
+        <div className={styles.segmented} role="radiogroup" aria-label={b.modeLabel}>
+          {(["presencial", "virtual"] as const).map((option) => {
+            const Icon = option === "presencial" ? MapPin : Video;
+            return (
+              <button
+                key={option}
+                type="button"
+                role="radio"
+                aria-checked={mode === option}
+                onClick={() => switchMode(option)}
+                className={`${styles.segment} focus-ring`}
+              >
+                <Icon className="h-4 w-4" aria-hidden />
+                {b[option]}
+              </button>
+            );
+          })}
         </div>
-        {mode === "presencial" ? (
-          <p className="typo-tech mt-2 text-xs text-zinc-500">{getStudioFullAddress()}</p>
-        ) : null}
-      </section>
-
-      {loading ? (
-        <div className="glass-card flex min-h-48 items-center justify-center rounded-2xl p-6">
-          <Loader2 className="h-6 w-6 animate-spin text-violet-300" />
-        </div>
-      ) : null}
-
-      {!loading && error ? (
-        <p className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
-          {error}
+        <p className={`${styles.hint} mt-2`}>
+          {mode === "presencial" ? copy.estimate.presencial.meta : copy.estimate.virtual.meta}
         </p>
-      ) : null}
 
-      {!loading && !error && days.length === 0 ? (
-        <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-300">
-          {t("quoteAdvisoryBookingEmpty")}
-        </p>
-      ) : null}
-
-      {!loading && !error && days.length > 0 ? (
-        <>
-          <section className="mb-6">
-            <div className="mb-3 flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-violet-300" />
-              <h3 className="typo-subtitle text-sm uppercase tracking-[0.14em] text-zinc-200">
-                {t("quoteAdvisoryBookingDayLabel")}
-              </h3>
-            </div>
-            <div className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {loading ? (
+          <div className={`${styles.notice} mt-6`} role="status">
+            <Loader2 className="h-4 w-4 animate-spin text-violet-300" aria-hidden />
+            {copy.common.loading}
+          </div>
+        ) : loadError ? (
+          <div className={`${styles.notice} ${styles.noticeError} mt-6`} role="alert">
+            <span>{b.loadError}</span>
+            <button
+              type="button"
+              onClick={() => {
+                resetSchedule();
+                setReloadToken((n) => n + 1);
+              }}
+              className={`${styles.noticeAction} focus-ring`}
+            >
+              {b.retry}
+            </button>
+          </div>
+        ) : days.length === 0 ? (
+          <div className={`${styles.notice} mt-6 flex-col !items-start`}>
+            <span>{b.empty}</span>
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noreferrer"
+              className={`${styles.noticeAction} !ml-0 focus-ring`}
+            >
+              {b.emptyCta}
+            </a>
+          </div>
+        ) : (
+          <>
+            <h2 className={styles.sectionLabel}>{b.dayLabel}</h2>
+            <div className={styles.dayRow}>
               {days.map((day) => {
+                const parts = dayParts(day.date, locale);
                 const selected = selectedDate === day.date;
                 return (
                   <button
                     key={day.date}
                     type="button"
-                    onClick={() => {
-                      setSelectedDate(day.date);
-                      void loadSlotsForDate(day.date);
-                    }}
-                    className={[
-                      "shrink-0 rounded-xl border px-4 py-3.5 text-left transition min-h-[44px]",
-                      selected
-                        ? "border-violet-500/35 bg-violet-600/15 text-violet-50"
-                        : "border-white/10 bg-white/5 text-zinc-200 hover:bg-white/8",
-                    ].join(" ")}
+                    aria-pressed={selected}
+                    onClick={() => void loadSlotsForDate(day.date, mode)}
+                    className={`${styles.day} focus-ring`}
                   >
-                    <span className="block text-sm font-semibold">
-                      {formatDayLabel(day.date, language)}
-                    </span>
+                    <span className={styles.dayWeek}>{parts.week}</span>
+                    <span className={styles.dayNum}>{parts.day}</span>
+                    <span className={styles.dayMonth}>{parts.month}</span>
                   </button>
                 );
               })}
             </div>
-          </section>
 
-          <section className="mb-8">
-            <h3 className="typo-subtitle mb-3 text-sm uppercase tracking-[0.14em] text-zinc-200">
-              {t("quoteAdvisoryBookingTimeLabel")}
-            </h3>
-            <p className="mb-3 text-sm text-zinc-400">
-              Primero elige un día. Después aparecerán las horas disponibles para esa fecha.
-            </p>
-            {!hasSelectedDate ? (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-4 text-sm text-zinc-300">
-                Selecciona un día arriba para ver los horarios disponibles.
-              </div>
+            <h2 className={styles.sectionLabel}>{b.timeLabel}</h2>
+            {!selectedDate ? (
+              <p className={styles.notice}>{b.pickDay}</p>
             ) : loadingSlots ? (
-              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-300">
-                <Loader2 className="h-4 w-4 animate-spin text-violet-300" />
-                Cargando horarios...
-              </div>
-            ) : slotsForSelectedDay.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {slotsForSelectedDay.map((slot) => {
-                  const selected = selectedSlot?.startsAt === slot.startsAt;
-                  return (
-                    <button
-                      key={slot.startsAt}
-                      type="button"
-                      onClick={() => setSelectedSlot(slot)}
-                      className={[
-                        "rounded-xl border px-3 py-3.5 text-sm font-semibold transition min-h-[44px]",
-                        selected
-                          ? "border-violet-500/35 bg-violet-600/15 text-violet-50"
-                          : "border-white/10 bg-white/5 text-zinc-100 hover:bg-white/8",
-                      ].join(" ")}
-                    >
-                      {slot.time}
-                    </button>
-                  );
-                })}
-              </div>
+              <p className={styles.notice} role="status">
+                <Loader2 className="h-4 w-4 animate-spin text-violet-300" aria-hidden />
+                {b.loadingTimes}
+              </p>
+            ) : slots.length === 0 ? (
+              <p className={styles.notice}>{b.noTimes}</p>
             ) : (
-              <div className="rounded-2xl border border-violet-500/20 bg-violet-600/10 p-4 text-sm text-violet-100">
-                No hay horarios disponibles para este día. Elige otro día para seguir con la reserva.
+              <div className={styles.times}>
+                {slots.map((slot) => (
+                  <button
+                    key={slot.startsAt}
+                    type="button"
+                    aria-pressed={selectedSlot?.startsAt === slot.startsAt}
+                    onClick={() => {
+                      setSelectedSlot(slot);
+                      setSubmitError("");
+                    }}
+                    className={`${styles.time} focus-ring`}
+                  >
+                    {slot.time}
+                  </button>
+                ))}
               </div>
             )}
-          </section>
 
-          {selectedSlot ? (
-            <section className="glass-card mb-6 rounded-2xl p-5">
-              <p className="typo-tech text-xs uppercase tracking-[0.14em] text-zinc-400">
-                {t("quoteAdvisoryBookingSummary")}
-              </p>
-              <p className="typo-subtitle mt-2 text-lg text-zinc-50">{selectedSlot.label}</p>
-              <p className="typo-body mt-2 text-sm text-zinc-300">
-                {profile?.name} · {modeTitle} ·{" "}
-                {t("quoteAdvisoryBookingDuration").replace("{minutes}", String(durationMin))}
-              </p>
-            </section>
-          ) : null}
-        </>
-      ) : null}
+            {selectedSlot ? (
+              <div className={styles.summary} aria-live="polite">
+                <p className={styles.summaryLabel}>{b.summary}</p>
+                <p className={styles.summaryValue}>{selectedSlot.label}</p>
+                <p className={styles.summaryMeta}>
+                  {fillCopy(b.summaryMeta, { mode: b[mode], minutes: durationMin })}
+                </p>
+              </div>
+            ) : null}
+          </>
+        )}
 
-      <div className="quote-step-footer mt-6">
-        <button
-          type="button"
-          onClick={() =>
-            router.push(`/cotizacion/asesoria?size=${encodeURIComponent(size)}`)
-          }
-          className="quote-step-footer-back rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:bg-white/8"
-        >
-          {t("commonBack")}
-        </button>
-        <button
-          type="button"
-          disabled={!selectedSlot || submitting}
-          onClick={() => void confirmBooking()}
-          className="quote-step-footer-next btn-accent focus-ring typo-cta inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          {t("quoteAdvisoryBookingConfirm")}
-        </button>
+        {submitError ? (
+          <p className={styles.fieldError} role="alert">
+            {submitError}
+          </p>
+        ) : null}
+
+        <QuoteStepFooter
+          onBack={() => router.push(QUOTE_FLOW_PATHS.estimate)}
+          nextLabel={b.confirm}
+          onNext={() => void confirmBooking()}
+          loading={submitting}
+          nextIcon={<Check className="h-4 w-4" aria-hidden />}
+        />
       </div>
     </QuoteShell>
   );

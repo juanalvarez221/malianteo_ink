@@ -1,7 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
-import type { ConnectionSelectionMode } from "@/shared/lib/quoteConnection";
+type ConnectionSelectionMode = "single" | "multiple";
 
 type ConnectionChoiceOptionProps = {
   selected: boolean;

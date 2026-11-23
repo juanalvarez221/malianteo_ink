@@ -4,6 +4,13 @@ const SMTP_HOST = "smtp.gmail.com";
 const SMTP_PORT = 465;
 const SMTP_TIMEOUT_MS = 20_000;
 
+export type EmailAttachment = {
+  filename: string;
+  contentType: string;
+  /** Contenido en base64 (sin prefijo data:). */
+  contentBase64: string;
+};
+
 export type GmailSmtpMessage = {
   fromHeader: string;
   fromAddress: string;
@@ -12,6 +19,7 @@ export type GmailSmtpMessage = {
   subject: string;
   text: string;
   html: string;
+  attachments?: EmailAttachment[];
 };
 
 export function getGmailSmtpConfig(): { user: string; password: string } | null {
@@ -29,20 +37,59 @@ function encodeSubject(value: string): string {
   return `=?UTF-8?B?${toBase64(value)}?=`;
 }
 
+/** RFC 2045: líneas base64 de máximo 76 caracteres. */
+function wrapBase64(value: string): string {
+  return (value.match(/.{1,76}/g) ?? []).join("\r\n");
+}
+
+function safeFilename(name: string): string {
+  return name.replace(/[^\w.\- ]+/g, "_").slice(0, 80) || "adjunto";
+}
+
 function buildMime(message: GmailSmtpMessage): string {
   const boundary = `malianteo-${Date.now().toString(16)}`;
+  const mixedBoundary = `${boundary}-mixed`;
+  const attachments = message.attachments ?? [];
   const headers = [
     `From: ${message.fromHeader}`,
     `To: ${message.to}`,
     message.replyTo ? `Reply-To: ${message.replyTo}` : "",
     `Subject: ${encodeSubject(message.subject)}`,
     "MIME-Version: 1.0",
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    attachments.length
+      ? `Content-Type: multipart/mixed; boundary="${mixedBoundary}"`
+      : `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ].filter((line) => line.length > 0);
+
+  if (attachments.length === 0) {
+    return [...headers, "", ...buildAlternativeParts(message, boundary), ""].join("\r\n");
+  }
 
   return [
     ...headers,
     "",
+    `--${mixedBoundary}`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    "",
+    ...buildAlternativeParts(message, boundary),
+    ...attachments.flatMap((file) => {
+      const filename = safeFilename(file.filename);
+      return [
+        `--${mixedBoundary}`,
+        `Content-Type: ${file.contentType}; name="${filename}"`,
+        "Content-Transfer-Encoding: base64",
+        `Content-Disposition: attachment; filename="${filename}"`,
+        "",
+        wrapBase64(file.contentBase64),
+      ];
+    }),
+    `--${mixedBoundary}--`,
+    "",
+  ].join("\r\n");
+}
+
+function buildAlternativeParts(message: GmailSmtpMessage, boundary: string): string[] {
+  return [
     `--${boundary}`,
     "Content-Type: text/plain; charset=UTF-8",
     "Content-Transfer-Encoding: base64",
@@ -54,8 +101,7 @@ function buildMime(message: GmailSmtpMessage): string {
     "",
     toBase64(message.html),
     `--${boundary}--`,
-    "",
-  ].join("\r\n");
+  ];
 }
 
 function isCompleteSmtpReply(buffer: string): boolean {

@@ -69,9 +69,13 @@ function eventContent(booking: AdvisoryBooking, confirmed: boolean) {
     booking.projectNotes || brief.openNote
       ? `• Qué quiere: ${[booking.projectNotes, brief.openNote].filter(Boolean).join(" · ")}`
       : undefined,
+    brief.estimate ? `• Estimado que vio: ${brief.estimate}` : undefined,
     brief.referral ? `• Cómo llegó: ${brief.referral}` : undefined,
+    brief.styleLikes ? `• Le gusta del estilo: ${brief.styleLikes}` : undefined,
+    brief.artistReasons ? `• Por qué Malianteo: ${brief.artistReasons}` : undefined,
+    brief.collaborationMode ? `• Cómo trabajar la pieza: ${brief.collaborationMode}` : undefined,
+    brief.references ? `• Referencias: ${brief.references}` : undefined,
     brief.personalValues ? `• Valores: ${brief.personalValues}` : undefined,
-    brief.collaborationMode ? `• Colaboración: ${brief.collaborationMode}` : undefined,
     "",
     "Próximos pasos",
     "• Confirma tu asistencia si aplica.",

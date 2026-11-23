@@ -241,6 +241,18 @@ export function BodyPremiumSelector({
     useState<SelectorLayoutMode>("desktop-medium");
   const [viewportWidth, setViewportWidth] = useState(1280);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  /** Último alto medido de la hoja móvil (se conserva entre aperturas). */
+  const lastSheetHeightRef = useRef(0);
+  /** Alto de hoja con el que se pidió el último encuadre. */
+  const framedSheetHeightRef = useRef<number | null>(null);
+  /** Re-encuadre con el estado más reciente (se asigna en cada render). */
+  const reframeForSheetRef = useRef<() => void>(() => undefined);
+
+  const handleSheetHeight = useCallback((height: number) => {
+    if (height <= 0) return;
+    lastSheetHeightRef.current = height;
+    reframeForSheetRef.current();
+  }, []);
 
   const handleInteractionReady = useCallback(() => {
     setInteractionReady(true);
@@ -500,10 +512,18 @@ export function BodyPremiumSelector({
       }
       return insets;
     }
-    const sheet = panelOpen
-      ? Math.min(window.innerHeight * 0.46, 336, frameH * 0.58)
-      : 0;
-    return { top: 60, right: 14, bottom: Math.max(84, sheet + 16), left: 14 };
+    if (!panelOpen) {
+      framedSheetHeightRef.current = null;
+      // Arriba: aviso "zona añadida"; abajo: controles de vista.
+      return { top: 60, right: 14, bottom: 76, left: 14 };
+    }
+    // La hoja tapa la parte baja del visor: la zona se encuadra en lo que
+    // queda libre encima. Se usa el alto real medido (o el último conocido).
+    const measured = lastSheetHeightRef.current;
+    const sheet =
+      measured > 0 ? measured : Math.min(window.innerHeight * 0.44, 320, frameH * 0.55);
+    framedSheetHeightRef.current = sheet;
+    return { top: 18, right: 14, bottom: sheet + 14, left: 14 };
   }
 
   function requestZoneFraming(
@@ -564,6 +584,28 @@ export function BodyPremiumSelector({
     setDistantCandidateId(null);
     setSheetMode("zone");
   }
+
+  // Si la hoja móvil termina con otro alto (más opciones, cobertura,
+  // expandida), se vuelve a encuadrar para que la zona quede completa encima.
+  useEffect(() => {
+    reframeForSheetRef.current = () => {
+      const height = lastSheetHeightRef.current;
+      if (!activeAtomicZoneId || height <= 0) return;
+      if (viewportWidth >= BODY_SELECTOR_DESKTOP_MIN_PX) return;
+      const used = framedSheetHeightRef.current;
+      if (used != null && Math.abs(used - height) < 20) return;
+      if (stagingRegionId) {
+        frameTargets([stagingRegionId], stagingRegionId, true);
+      } else {
+        requestZoneFraming(
+          [activeAtomicZoneId],
+          0,
+          getCameraFocusForAtomicZone(activeAtomicZoneId, activeFraming),
+          true,
+        );
+      }
+    };
+  });
 
   function handleActivateZone(atomicId: string) {
     markInteracted();
@@ -1032,8 +1074,20 @@ export function BodyPremiumSelector({
           </aside>
         ) : null}
 
-        <div className="pointer-events-none absolute bottom-3 left-3 z-20 right-3 flex items-end justify-between gap-3 min-[900px]:bottom-4 min-[900px]:left-4 min-[900px]:right-auto">
-          <div className="pointer-events-auto">
+        <div
+          className={[
+            "pointer-events-none absolute bottom-3 left-3 right-3 z-20 flex items-end justify-between gap-3 transition-opacity duration-200 min-[900px]:bottom-4 min-[900px]:left-4 min-[900px]:right-auto",
+            activeAtomicZoneId ? "max-[899px]:opacity-0" : "opacity-100",
+          ].join(" ")}
+          aria-hidden={activeAtomicZoneId && viewportWidth < BODY_SELECTOR_DESKTOP_MIN_PX ? true : undefined}
+        >
+          <div
+            className={
+              activeAtomicZoneId && viewportWidth < BODY_SELECTOR_DESKTOP_MIN_PX
+                ? "pointer-events-none"
+                : "pointer-events-auto"
+            }
+          >
             <BodyViewControls
               cameraView={activeViewHint}
               onCameraViewChange={handleCameraViewChange}
@@ -1042,26 +1096,12 @@ export function BodyPremiumSelector({
               compact
             />
           </div>
-
-          {!activeAtomicZoneId && selectedTargetIds.length > 0 ? (
-            <div className="pointer-events-auto min-[900px]:hidden">
-              <BodySelectionSummary
-                selectedTargetIds={selectedTargetIds}
-                onRemove={() => undefined}
-                onClear={() => undefined}
-                variant="compact"
-                onCompactOpen={() => {
-                  setSheetMode("selection");
-                  setSheetState("expanded");
-                }}
-              />
-            </div>
-          ) : null}
         </div>
 
         <BodyMobileSheet
           state={mobileSheetState}
           showPeekFooter={false}
+          onHeightChange={handleSheetHeight}
           onStateChange={(next) => {
             setSheetState(next);
             if (next === "closed") {
@@ -1109,7 +1149,8 @@ export function BodyPremiumSelector({
         </BodyMobileSheet>
       </div>
 
-      <div className="hidden min-[900px]:block">
+      {/* La selección se lista debajo del modelo (nunca encima de la zona). */}
+      <div className={selectedTargetIds.length > 0 ? "block" : "hidden min-[900px]:block"}>
         <BodySelectionSummary
           selectedTargetIds={selectedTargetIds}
           onRemove={handleRemoveTarget}

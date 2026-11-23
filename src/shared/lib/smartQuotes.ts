@@ -22,6 +22,12 @@ export type SmartQuoteRequest = {
   connectionCollaboration?: string;
   connectionPurpose?: string;
   connectionAftercare?: string;
+  /** Lo que más le gusta del estilo (texto en español para el brief). */
+  styleLikes?: string;
+  /** Por qué cree que Malianteo es el artista ideal. */
+  artistReasons?: string;
+  /** Imágenes de referencia adjuntas al brief. */
+  referenceCount?: number;
   requiresAdvisory?: boolean;
   advisoryMode?: AdvisoryMode;
   advisoryScheduledAt?: string;
@@ -55,7 +61,7 @@ export function saveSmartQuoteRequests(requests: SmartQuoteRequest[]) {
 }
 
 export function addSmartQuoteRequest(request: SmartQuoteRequest) {
-  const current = getSmartQuoteRequests();
+  const current = getSmartQuoteRequests().filter((item) => item.id !== request.id);
   saveSmartQuoteRequests([request, ...current]);
 }
 
@@ -83,6 +89,9 @@ function toBackendPayload(request: SmartQuoteRequest) {
       values: request.connectionValues,
       collaboration: request.connectionCollaboration,
       purpose: request.connectionPurpose,
+      styleLikes: request.styleLikes,
+      artistReasons: request.artistReasons,
+      references: request.referenceCount ? String(request.referenceCount) : undefined,
     },
     collaborationMode: request.connectionCollaboration,
     advisoryMode: request.advisoryMode,
@@ -103,13 +112,22 @@ function toBackendPayload(request: SmartQuoteRequest) {
  */
 export async function persistQuoteRequestToBackend(
   request: SmartQuoteRequest,
+  options?: {
+    /** Data URLs JPEG ya comprimidas; viajan solo como adjunto del correo. */
+    referenceImages?: Array<{ name: string; dataUrl: string }>;
+  },
 ): Promise<boolean> {
   if (typeof window === "undefined") return false;
   try {
     const response = await fetch("/api/quote-requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(toBackendPayload(request)),
+      body: JSON.stringify({
+        ...toBackendPayload(request),
+        ...(options?.referenceImages?.length
+          ? { referenceImages: options.referenceImages }
+          : {}),
+      }),
     });
     return response.ok;
   } catch {

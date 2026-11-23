@@ -158,6 +158,7 @@ export function BodyContextOptions({
           title={title}
           subtitle={compact ? null : panelSubtitle}
           onClose={onClose}
+          compact={compact}
         />
         {replacingTargetId ? (
           <p className="mt-2 text-xs leading-snug text-[rgba(196,181,253,0.92)]">
@@ -170,7 +171,7 @@ export function BodyContextOptions({
           </p>
         ) : null}
 
-        <div className={compact ? "mt-3 space-y-3" : "mt-4 space-y-4"}>
+        <div className={compact ? "mt-2 space-y-2.5" : "mt-4 space-y-4"}>
           {options.length > 1 ? (
             <AreaChoices
               options={options}
@@ -185,8 +186,15 @@ export function BodyContextOptions({
 
           {coverages.length > 1 ? (
             <div role="radiogroup" aria-label="Cobertura">
-              <p className="text-xs font-medium text-zinc-400">Cobertura</p>
-              <div className="mt-1.5 grid grid-cols-3 gap-1 rounded-xl border border-white/10 bg-black/30 p-1">
+              <p className={compact ? "sr-only" : "text-xs font-medium text-zinc-400"}>
+                Cobertura
+              </p>
+              <div
+                className={[
+                  "grid grid-cols-3 gap-1 rounded-xl border border-white/10 bg-black/30 p-1",
+                  compact ? "" : "mt-1.5",
+                ].join(" ")}
+              >
                 {coverages.map((cov) => {
                   const active = stagingCoverage === cov;
                   return (
@@ -197,7 +205,8 @@ export function BodyContextOptions({
                       aria-checked={active}
                       onClick={() => onStagingCoverageChange?.(cov)}
                       className={[
-                        "min-h-10 rounded-lg px-2 text-xs font-semibold transition-colors",
+                        compact ? "min-h-9" : "min-h-10",
+                        "rounded-lg px-2 text-xs font-semibold transition-colors",
                         FOCUS_RING,
                         active
                           ? "bg-[rgba(168,85,247,0.24)] text-[rgba(243,238,255,0.98)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
@@ -219,7 +228,8 @@ export function BodyContextOptions({
               disabled={stagedAlready && !replacingTargetId}
               data-body-confirm
               className={[
-                "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors active:scale-[0.98]",
+                compact ? "min-h-11" : "min-h-12",
+                "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors active:scale-[0.98]",
                 FOCUS_RING,
                 stagedAlready && !replacingTargetId
                   ? "cursor-default border border-white/8 bg-white/[0.03] text-zinc-500"
@@ -310,15 +320,24 @@ function PanelHeader({
   title,
   subtitle,
   onClose,
+  compact = false,
 }: {
   title: string;
   subtitle?: string | null;
   onClose?: () => void;
+  compact?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-3">
+    <div className={compact ? "flex items-center gap-3" : "flex items-start gap-3"}>
       <div className="min-w-0 flex-1">
-        <h2 className="text-base font-semibold leading-snug tracking-tight text-[rgba(245,240,255,0.97)] sm:text-[1.0625rem] [text-wrap:balance]">
+        <h2
+          className={[
+            "font-semibold leading-snug tracking-tight text-[rgba(245,240,255,0.97)]",
+            compact
+              ? "truncate text-[0.9375rem]"
+              : "text-base sm:text-[1.0625rem] [text-wrap:balance]",
+          ].join(" ")}
+        >
           {title}
         </h2>
         {subtitle ? (
@@ -360,11 +379,11 @@ function AreaChoices({
   const stagedBare = stagedId ? bareId(stagedId) : null;
   return (
     <div role="radiogroup" aria-label="Área a tatuar">
-      <p className="text-xs font-medium text-zinc-400">Área a tatuar</p>
+      <p className={compact ? "sr-only" : "text-xs font-medium text-zinc-400"}>Área a tatuar</p>
       <div
         className={
           compact
-            ? "-mx-4 mt-1.5 flex snap-x gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            ? "-mx-4 flex snap-x gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             : "mt-1.5 flex flex-col gap-1"
         }
       >

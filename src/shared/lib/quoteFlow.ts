@@ -1,9 +1,8 @@
-import { getQuoteConnection, isRejectedCollaboration } from "@/shared/lib/quoteConnection";
+import { getQuoteConnection } from "@/shared/lib/quoteConnection";
 import {
   clearQuoteCompletionType,
   clearQuoteDraft,
   getQuoteDraft,
-  isLargeQuoteSize,
   saveQuoteDraft,
   type QuoteDraft,
 } from "@/shared/lib/quoteDraft";
@@ -12,29 +11,35 @@ import {
   safeLocalStorageGet,
   safeLocalStorageRemove,
   safeLocalStorageSet,
+  safeStorageRemove,
 } from "@/shared/lib/safeStorage";
 
 export const QUOTE_FLOW_PATHS = {
   profile: "/cotizacion",
   connection: "/cotizacion/conexion",
   quoteStart: "/cotizacion/tamano",
+  location: "/cotizacion/ubicacion",
+  inspiration: "/cotizacion/referencia",
+  estimate: "/cotizacion/estimado",
+  booking: "/cotizacion/asesoria/agendar",
   profileEdit: "/cotizacion?edit=1",
 } as const;
+
+/** Imágenes de referencia comprimidas (solo sesión; ver quoteReferenceImages). */
+export const QUOTE_REFERENCE_IMAGES_KEY = "quote_reference_images";
 
 export type QuoteFlowPath = (typeof QUOTE_FLOW_PATHS)[keyof typeof QUOTE_FLOW_PATHS];
 
 const QUOTE_ONBOARDING_KEY = "quote_onboarding_complete";
 const QUOTE_RESUME_KEY = "quote_resume_path";
 
-const RESUMABLE_EXACT = new Set([
+const RESUMABLE_EXACT = new Set<string>([
   QUOTE_FLOW_PATHS.connection,
   QUOTE_FLOW_PATHS.quoteStart,
-  "/cotizacion/ubicacion",
-  "/cotizacion/estilo",
-  "/cotizacion/referencia",
-  "/cotizacion/confirmacion",
-  "/cotizacion/asesoria",
-  "/cotizacion/asesoria/agendar",
+  QUOTE_FLOW_PATHS.location,
+  QUOTE_FLOW_PATHS.inspiration,
+  QUOTE_FLOW_PATHS.estimate,
+  QUOTE_FLOW_PATHS.booking,
 ]);
 
 export function hasCompleteQuoteProfile() {
@@ -42,9 +47,7 @@ export function hasCompleteQuoteProfile() {
 }
 
 export function hasApprovedQuoteConnection() {
-  const connection = getQuoteConnection();
-  if (!connection) return false;
-  return !isRejectedCollaboration(connection.adjustments);
+  return getQuoteConnection() !== null;
 }
 
 /** Onboarding = perfil + conexión aprobada. Se conserva entre visitas. */
@@ -104,20 +107,16 @@ function draftHasLocation(draft: QuoteDraft | null) {
   return Boolean(draft.zone?.trim());
 }
 
+function draftHasInspiration(draft: QuoteDraft | null) {
+  return Boolean(draft?.styleLikes?.length && draft?.artistReasons?.length);
+}
+
 function inferResumeFromDraft(): string | null {
   const draft = getQuoteDraft();
   if (!draft?.size) return null;
-  const size = draft.size;
-  if (draftHasLocation(draft)) {
-    if (isLargeQuoteSize(size)) {
-      return `/cotizacion/asesoria?size=${encodeURIComponent(size)}`;
-    }
-    const zone = draft.zone?.trim() || "otro";
-    const params = new URLSearchParams({ size, zone });
-    if (draft.zoneOther?.trim()) params.set("zoneOther", draft.zoneOther.trim());
-    return `/cotizacion/confirmacion?${params.toString()}`;
-  }
-  return `/cotizacion/ubicacion?size=${encodeURIComponent(size)}`;
+  if (!draftHasLocation(draft)) return QUOTE_FLOW_PATHS.location;
+  if (!draftHasInspiration(draft)) return QUOTE_FLOW_PATHS.inspiration;
+  return QUOTE_FLOW_PATHS.estimate;
 }
 
 /**
@@ -183,6 +182,9 @@ export function startNewQuoteSession() {
   clearQuoteDraft();
   clearQuoteCompletionType();
   clearQuoteResumePath();
+  if (typeof window !== "undefined") {
+    safeStorageRemove(window.sessionStorage, QUOTE_REFERENCE_IMAGES_KEY);
+  }
 }
 
 export function shouldSkipToQuote() {
@@ -193,12 +195,6 @@ type QuoteSearchParams = {
   get(name: string): string | null;
 };
 
-function withSizeQuery(path: string, size: string) {
-  if (!size) return path;
-  const join = path.includes("?") ? "&" : "?";
-  return `${path}${join}size=${encodeURIComponent(size)}`;
-}
-
 /**
  * Paso anterior del flujo de cotización (no depende del historial del navegador).
  * Así el botón atrás siempre lleva al paso lógico previo.
@@ -207,39 +203,21 @@ export function resolveQuoteBackPath(
   pathname: string,
   searchParams?: QuoteSearchParams | null,
 ): string {
-  const size =
-    searchParams?.get("size")?.trim() ||
-    getQuoteDraft()?.size?.trim() ||
-    "";
   const token = searchParams?.get("token")?.trim() || "";
 
   if (pathname === QUOTE_FLOW_PATHS.profile) return "/";
   if (pathname === QUOTE_FLOW_PATHS.connection) return QUOTE_FLOW_PATHS.profile;
-  if (pathname === QUOTE_FLOW_PATHS.quoteStart) {
-    return hasCompletedQuoteOnboarding() ? "/" : QUOTE_FLOW_PATHS.connection;
-  }
-  if (pathname.startsWith("/cotizacion/ubicacion")) {
-    return QUOTE_FLOW_PATHS.quoteStart;
-  }
-  if (
-    pathname.startsWith("/cotizacion/estilo") ||
-    pathname.startsWith("/cotizacion/referencia") ||
-    pathname.startsWith("/cotizacion/confirmacion")
-  ) {
-    return withSizeQuery("/cotizacion/ubicacion", size || "mediano");
-  }
-  if (pathname === "/cotizacion/asesoria") {
-    return withSizeQuery("/cotizacion/ubicacion", size || "grande");
-  }
-  if (pathname.startsWith("/cotizacion/asesoria/agendar")) {
-    return withSizeQuery("/cotizacion/asesoria", size || "grande");
-  }
+  if (pathname === QUOTE_FLOW_PATHS.quoteStart) return QUOTE_FLOW_PATHS.connection;
+  if (pathname.startsWith(QUOTE_FLOW_PATHS.location)) return QUOTE_FLOW_PATHS.quoteStart;
+  if (pathname.startsWith(QUOTE_FLOW_PATHS.inspiration)) return QUOTE_FLOW_PATHS.location;
+  if (pathname.startsWith(QUOTE_FLOW_PATHS.estimate)) return QUOTE_FLOW_PATHS.inspiration;
   if (pathname.startsWith("/cotizacion/asesoria/reagendar")) {
     return token
       ? `/cotizacion/asesoria/confirmar?token=${encodeURIComponent(token)}`
       : "/";
   }
   if (pathname.startsWith("/cotizacion/asesoria/confirmar")) return "/";
+  if (pathname.startsWith(QUOTE_FLOW_PATHS.booking)) return QUOTE_FLOW_PATHS.estimate;
   if (pathname.startsWith("/cotizacion/gracias")) return "/";
 
   return "/";

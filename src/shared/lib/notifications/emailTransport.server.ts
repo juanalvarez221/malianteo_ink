@@ -1,5 +1,11 @@
 import { STUDIO_MAIL, getStudioFromHeader, getStudioReplyTo } from "@/shared/config/mail";
-import { getGmailSmtpConfig, sendViaGmailSmtp } from "@/shared/lib/notifications/gmailSmtp.server";
+import {
+  getGmailSmtpConfig,
+  sendViaGmailSmtp,
+  type EmailAttachment,
+} from "@/shared/lib/notifications/gmailSmtp.server";
+
+export type { EmailAttachment };
 
 /**
  * Transporte de email (Gmail SMTP).
@@ -14,6 +20,7 @@ export type EmailPayload = {
   html: string;
   text: string;
   replyTo?: string;
+  attachments?: EmailAttachment[];
 };
 
 export type EmailResult = { ok: boolean; preview: boolean };
@@ -39,6 +46,7 @@ export async function sendBrandedEmail(payload: EmailPayload): Promise<EmailResu
       subject: payload.subject,
       text: payload.text,
       html: payload.html,
+      attachments: payload.attachments,
     });
     return { ok: true, preview: false };
   } catch (error) {

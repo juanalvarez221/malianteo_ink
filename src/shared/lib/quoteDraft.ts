@@ -7,6 +7,10 @@ import {
   safeStorageRemove,
 } from "@/shared/lib/safeStorage";
 
+/** Tamaños del cotizador (de menor a mayor). */
+export const QUOTE_SIZE_IDS = ["mediano", "grande", "extra", "proyecto"] as const;
+export type QuoteSizeId = (typeof QUOTE_SIZE_IDS)[number];
+
 export type QuoteDraft = {
   size: string;
   zone?: string;
@@ -30,7 +34,16 @@ export type QuoteDraft = {
   legSide?: string;
   /** @deprecated */
   legPart?: string;
+  /** Nota libre del cliente ("¿algo más?"). */
   notes?: string;
+  /** Lo que más le gusta del estilo (ids de STYLE_LIKES). */
+  styleLikes?: string[];
+  /** Por qué cree que Malianteo es el artista ideal (ids de ARTIST_REASONS). */
+  artistReasons?: string[];
+  /** Cantidad de imágenes de referencia adjuntas. */
+  referenceCount?: number;
+  /** Id de la solicitud registrada al ver el estimado (evita duplicados). */
+  quoteRequestId?: string;
 };
 
 const QUOTE_DRAFT_KEY = "quote_draft";
@@ -46,22 +59,23 @@ export function normalizeQuoteSize(size: string) {
   return normalized;
 }
 
+/** Convierte cualquier valor guardado (incluye los antiguos) a un tamaño válido. */
+export function resolveQuoteSizeParam(size: string | null | undefined): QuoteSizeId {
+  const normalized = normalizeQuoteSize(size ?? "");
+  if (normalized.includes("proyecto")) return "proyecto";
+  if (normalized.includes("extra")) return "extra";
+  if (normalized.includes("gran")) return "grande";
+  return "mediano";
+}
+
+export function isQuoteSizeId(value: string | null | undefined): value is QuoteSizeId {
+  return QUOTE_SIZE_IDS.includes(value as QuoteSizeId);
+}
+
+/** Piezas que ya cuentan como proyecto grande (para correos y CRM). */
 export function isLargeQuoteSize(size: string) {
-  return normalizeQuoteSize(size).includes("gran");
-}
-
-/** Solo piezas medianas (-0 cm) reciben estimado orientativo online. */
-export function receivesOnlinePricing(size: string) {
-  return !isLargeQuoteSize(size);
-}
-
-/** Proyectos grandes (+25 cm) requieren asesoría presencial o virtual. */
-export function requiresProjectAdvisory(size: string) {
-  return isLargeQuoteSize(size);
-}
-
-export function resolveQuoteSizeParam(size: string): "mediano" | "grande" {
-  return isLargeQuoteSize(size) ? "grande" : "mediano";
+  const id = resolveQuoteSizeParam(size);
+  return id === "extra" || id === "proyecto";
 }
 
 export function saveQuoteDraft(draft: QuoteDraft) {

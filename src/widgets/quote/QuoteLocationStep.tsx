@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
 import { QuoteShell } from "@/widgets/quote/QuoteShell";
+import { QuoteStepFooter } from "@/widgets/quote/QuoteStepFooter";
+import { useQuoteFlowCopy } from "@/widgets/quote/quoteFlowCopy";
+import styles from "@/widgets/quote/QuoteFlow.module.css";
+import { QUOTE_FLOW_PATHS } from "@/shared/lib/quoteFlow";
 import {
   QuoteBodyLocationSelector,
   getInitialQuoteBodyLocationMode,
@@ -11,11 +14,7 @@ import {
 } from "@/widgets/quote/QuoteBodyLocationSelector";
 import { useQuoteOnboardingGate } from "@/widgets/quote/useQuoteOnboardingGate";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
-import {
-  getQuoteDraft,
-  isLargeQuoteSize,
-  saveQuoteDraft,
-} from "@/shared/lib/quoteDraft";
+import { getQuoteDraft, saveQuoteDraft } from "@/shared/lib/quoteDraft";
 import type { ZoneId } from "@/shared/lib/quoteZones";
 import type { HeadPartId } from "@/shared/lib/headZoneParts";
 import type { BackPartId } from "@/shared/lib/backZoneParts";
@@ -29,7 +28,6 @@ import {
 } from "@/shared/lib/legZoneParts";
 import type { BodySelectionTargetId } from "@/widgets/body-3d/ux/bodySelectionSerialization";
 import {
-  buildBody3DNavigationParams,
   buildLegacyQuoteLocationFromBodyTargets,
   isBody3DLocationComplete,
   normalizeQuoteBodyTargets,
@@ -44,7 +42,14 @@ function readInitialTargets(): BodySelectionTargetId[] {
 export function QuoteLocationStep({ size }: { size: string }) {
   const router = useRouter();
   const { t } = useSiteLanguage();
+  const copy = useQuoteFlowCopy();
   const gateReady = useQuoteOnboardingGate();
+  const [showEmptyHint, setShowEmptyHint] = useState(false);
+
+  // Sin tamaño elegido no hay pieza que ubicar.
+  useEffect(() => {
+    if (gateReady && !getQuoteDraft()?.size) router.replace(QUOTE_FLOW_PATHS.quoteStart);
+  }, [gateReady, router]);
 
   const [selectedBodyTargets, setSelectedBodyTargets] = useState<
     BodySelectionTargetId[]
@@ -94,18 +99,18 @@ export function QuoteLocationStep({ size }: { size: string }) {
       : isLegacyComplete;
 
   function handleContinue() {
-    if (!isLocationComplete) return;
+    if (!isLocationComplete) {
+      setShowEmptyHint(true);
+      return;
+    }
 
     const base = getQuoteDraft() ?? { size };
 
     if (selectorMode === "3d") {
-      const bodyFields = buildLegacyQuoteLocationFromBodyTargets(
-        selectedBodyTargets,
-      );
       saveQuoteDraft({
         ...base,
-        size,
-        ...bodyFields,
+        size: base.size || size,
+        ...buildLegacyQuoteLocationFromBodyTargets(selectedBodyTargets),
         headPart: undefined,
         backPart: undefined,
         armLaterality: undefined,
@@ -115,14 +120,7 @@ export function QuoteLocationStep({ size }: { size: string }) {
         legFaceScope: undefined,
         legExtent: undefined,
       });
-
-      if (isLargeQuoteSize(size)) {
-        router.push(`/cotizacion/asesoria?size=${encodeURIComponent(size)}`);
-        return;
-      }
-
-      const params = buildBody3DNavigationParams(size, selectedBodyTargets);
-      router.push(`/cotizacion/referencia?${params.toString()}`);
+      router.push(QUOTE_FLOW_PATHS.inspiration);
       return;
     }
 
@@ -130,7 +128,7 @@ export function QuoteLocationStep({ size }: { size: string }) {
 
     saveQuoteDraft({
       ...base,
-      size,
+      size: base.size || size,
       zone,
       zoneOther: zoneOther.trim() || undefined,
       headPart: headPart ?? undefined,
@@ -143,117 +141,55 @@ export function QuoteLocationStep({ size }: { size: string }) {
       legExtent: legSelection?.extent,
       selectedBodyTargets: undefined,
     });
-
-    if (isLargeQuoteSize(size)) {
-      router.push(`/cotizacion/asesoria?size=${encodeURIComponent(size)}`);
-      return;
-    }
-
-    const params = new URLSearchParams();
-    params.set("size", size);
-    params.set("zone", zone);
-    if (zoneOther.trim()) params.set("zoneOther", zoneOther.trim());
-    if (headPart) params.set("headPart", headPart);
-    if (backPart) params.set("backPart", backPart);
-    if (armSelection?.laterality) {
-      params.set("armLaterality", armSelection.laterality);
-    }
-    if (armSelection?.faceScope) {
-      params.set("armFaceScope", armSelection.faceScope);
-    }
-    if (armSelection?.part) params.set("armPart", armSelection.part);
-    if (legSelection?.laterality) {
-      params.set("legLaterality", legSelection.laterality);
-    }
-    if (legSelection?.faceScope) {
-      params.set("legFaceScope", legSelection.faceScope);
-    }
-    if (legSelection?.extent) params.set("legExtent", legSelection.extent);
-    router.push(`/cotizacion/referencia?${params.toString()}`);
-  }
-
-  if (!gateReady) {
-    return (
-      <QuoteShell showGreeting={false}>
-        <div className="flex min-h-[40dvh] items-center justify-center">
-          <p className="typo-tech text-sm uppercase tracking-[0.18em] text-zinc-400">
-            Cargando…
-          </p>
-        </div>
-      </QuoteShell>
-    );
+    router.push(QUOTE_FLOW_PATHS.inspiration);
   }
 
   return (
-    <QuoteShell>
-      <section className="relative mb-4 sm:mb-5">
-        <p className="typo-tech mb-2 uppercase tracking-[0.16em] text-violet-200/85">
-          {t("quoteLocationStep")}
-        </p>
+    <QuoteShell showGreeting={false} journey={{ step: "zona" }}>
+      <div className={styles.columnWide}>
+        <header className={styles.zoneHead}>
+          <h1 className="typo-section quote-step-title">{copy.zone.title}</h1>
+          <p className={styles.lead}>{copy.zone.body}</p>
+        </header>
 
-        <h2 className="typo-section text-[1.85rem] leading-[1.08] tracking-tight sm:text-[2.35rem] md:text-[2.75rem]">
-          {t("quoteLocationTitle")}
-        </h2>
+        {gateReady ? (
+          <>
+            <QuoteBodyLocationSelector
+              value={selectedBodyTargets}
+              onChange={handleTargetsChange}
+              mode={selectorMode}
+              onFallback={handleFallback}
+              resetKey={size}
+              legacy={{
+                zone,
+                onZoneChange: handleZoneChange,
+                zoneOther,
+                onZoneOtherChange: setZoneOther,
+                headPart,
+                onHeadPartChange: setHeadPart,
+                backPart,
+                onBackPartChange: setBackPart,
+                armSelection,
+                onArmSelectionChange: setArmSelection,
+                legSelection,
+                onLegSelectionChange: setLegSelection,
+              }}
+            />
 
-        <p className="typo-body mt-2 max-w-xl text-[0.95rem] leading-relaxed text-zinc-300/90 sm:mt-2.5">
-          {t("quoteLocationBody")}
-        </p>
-      </section>
+            {showEmptyHint && !isLocationComplete ? (
+              <p className={styles.fieldError} role="alert">
+                {selectorMode === "3d" ? copy.zone.empty : t("quoteRefinementIncomplete")}
+              </p>
+            ) : null}
 
-      <section className="mb-4 sm:mb-5">
-        <QuoteBodyLocationSelector
-          value={selectedBodyTargets}
-          onChange={handleTargetsChange}
-          mode={selectorMode}
-          onFallback={handleFallback}
-          resetKey={size}
-          legacy={{
-            zone,
-            onZoneChange: handleZoneChange,
-            zoneOther,
-            onZoneOtherChange: setZoneOther,
-            headPart,
-            onHeadPartChange: setHeadPart,
-            backPart,
-            onBackPartChange: setBackPart,
-            armSelection,
-            onArmSelectionChange: setArmSelection,
-            legSelection,
-            onLegSelectionChange: setLegSelection,
-          }}
-        />
-      </section>
-
-      {!isLocationComplete ? (
-        <div className="mb-3 rounded-xl border border-violet-300/20 bg-violet-500/10 px-4 py-3 text-sm font-medium text-violet-100">
-          {selectorMode === "3d"
-            ? t("quoteBody3dEmptyContinue")
-            : t("quoteRefinementIncomplete")}
-        </div>
-      ) : null}
-
-      <div className="quote-step-footer mt-4 sm:mt-5">
-        <button
-          type="button"
-          onClick={() => router.push("/cotizacion/tamano")}
-          className="quote-step-footer-back rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:bg-white/8"
-        >
-          {t("commonBack")}
-        </button>
-
-        <button
-          type="button"
-          onClick={handleContinue}
-          disabled={!isLocationComplete}
-          aria-disabled={!isLocationComplete}
-          className={[
-            "quote-step-footer-next btn-accent focus-ring typo-cta group inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 active:scale-[0.98]",
-            !isLocationComplete ? "cursor-not-allowed opacity-45" : "",
-          ].join(" ")}
-        >
-          {t("quoteContinue")}
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-        </button>
+            <QuoteStepFooter
+              onBack={() => router.push(QUOTE_FLOW_PATHS.quoteStart)}
+              nextLabel={copy.common.continue}
+              onNext={handleContinue}
+              className="!mt-6"
+            />
+          </>
+        ) : null}
       </div>
     </QuoteShell>
   );

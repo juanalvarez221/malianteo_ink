@@ -1,13 +1,13 @@
 import { BRAND } from "@/shared/config/brand";
 import { getStudioFullAddress, STUDIO } from "@/shared/config/studio";
 import { formatSlotLabel } from "@/shared/lib/advisorySlots";
-import { isLargeQuoteSize } from "@/shared/lib/quoteDraft";
 import { getSiteOrigin } from "@/shared/lib/siteOrigin.server";
 import type { AdvisoryBooking } from "@/shared/lib/advisoryTypes";
 import type { QuoteRequestRecord } from "@/shared/lib/storage/quoteRequestStore.server";
 import {
   getArtistNotificationsEmail,
   sendBrandedEmail,
+  type EmailAttachment,
 } from "@/shared/lib/notifications/emailTransport.server";
 import {
   wrapStudioEmail,
@@ -44,6 +44,7 @@ async function sendToArtist(
   lead: string,
   replyTo?: string,
   action?: { href: string; label: string },
+  attachments?: EmailAttachment[],
 ) {
   try {
     const resolvedAction = action ?? { href: adminLink(), label: "Ver en el estudio" };
@@ -76,6 +77,7 @@ async function sendToArtist(
       }),
       text,
       replyTo,
+      attachments,
     });
     if (!result.ok) {
       console.warn("[internal-email:warn] no se pudo enviar:", subject);
@@ -112,7 +114,6 @@ function formatCreatedAt(iso: string) {
 }
 
 function hasRealEstimate(record: QuoteRequestRecord): boolean {
-  if (isLargeQuoteSize(record.projectSize)) return false;
   const total = record.estimateTotal?.trim();
   if (!total) return false;
   return !/definir/i.test(total);
@@ -136,9 +137,15 @@ export function buildQuoteArtistBriefingRows(record: QuoteRequestRecord): Row[] 
     { label: "Estilo", value: record.style },
     { label: "Qué quiere", value: record.referenceNotes },
     { label: "Llegó por", value: c.referral },
+    { label: "Le gusta del estilo", value: c.styleLikes },
+    { label: "Por qué Malianteo", value: c.artistReasons },
+    { label: "Cómo trabajar la pieza", value: record.collaborationMode ?? c.collaboration },
     { label: "Valores", value: c.values },
-    { label: "Colaboración", value: record.collaborationMode ?? c.collaboration },
     { label: "Nota", value: c.purpose },
+    {
+      label: "Referencias",
+      value: c.references ? `${c.references} imagen(es) adjuntas` : undefined,
+    },
     { label: "Estado", value: record.statusLabel },
   ];
 
@@ -175,7 +182,10 @@ export function buildQuoteArtistBriefingRows(record: QuoteRequestRecord): Row[] 
 }
 
 /** FASE 6.2, Correo interno por nueva cotización (flujo mediano). */
-export async function sendNewQuoteInternalEmail(record: QuoteRequestRecord) {
+export async function sendNewQuoteInternalEmail(
+  record: QuoteRequestRecord,
+  attachments?: EmailAttachment[],
+) {
   await sendToArtist(
     `${BRAND.name} · Brief nuevo · ${record.clientName}`,
     buildQuoteArtistBriefingRows(record),
@@ -184,6 +194,7 @@ export async function sendNewQuoteInternalEmail(record: QuoteRequestRecord) {
     "Llegó un brief por el cotizador. Abre el enlace, ajusta la cifra y mándale la cotización oficial.",
     record.email,
     { href: quoteAdjustUrl(record.id), label: "Ajustar y enviar cotización" },
+    attachments,
   );
 }
 
@@ -213,9 +224,13 @@ export function buildAdvisoryArtistBriefingRows(booking: AdvisoryBooking): Row[]
     { label: "Tamaño", value: booking.size || "Proyecto grande" },
     { label: "Zona", value: brief.bodyZone },
     { label: "Qué quiere", value: idea },
+    { label: "Estimado que vio", value: brief.estimate },
     { label: "Llegó por", value: brief.referral },
+    { label: "Le gusta del estilo", value: brief.styleLikes },
+    { label: "Por qué Malianteo", value: brief.artistReasons },
+    { label: "Cómo trabajar la pieza", value: brief.collaborationMode },
+    { label: "Referencias", value: brief.references },
     { label: "Valores", value: brief.personalValues },
-    { label: "Colaboración", value: brief.collaborationMode },
     { label: "Nota", value: noteIsDistinct ? openNote : !idea ? openNote : undefined },
   ];
 

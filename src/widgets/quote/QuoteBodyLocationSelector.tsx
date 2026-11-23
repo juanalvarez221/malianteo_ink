@@ -108,7 +108,7 @@ export function QuoteBodyLocationSelector({
         onChange={onChange}
         showLabContinue={false}
         showIntroOverlay={false}
-        frameHeight="clamp(400px, 62dvh, 640px)"
+        frameHeight="clamp(440px, 68svh, 680px)"
         className="w-full"
         loadingLabel={t("quoteBody3dLoading")}
         introTitle={t("quoteBody3dIntroTitle")}

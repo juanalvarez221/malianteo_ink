@@ -17,9 +17,17 @@ export type QuoteAdvisoryMode = "presencial" | "virtual";
 
 export type QuoteConnectionAnswers = {
   referral?: string;
+  /** @deprecated pregunta retirada; solo registros antiguos. */
   values?: string;
   collaboration?: string;
+  /** Nota libre del cliente. */
   purpose?: string;
+  /** Lo que más le gusta del estilo de Malianteo. */
+  styleLikes?: string;
+  /** Por qué cree que Malianteo es el artista ideal. */
+  artistReasons?: string;
+  /** Cantidad de imágenes de referencia enviadas. */
+  references?: string;
 };
 
 /**

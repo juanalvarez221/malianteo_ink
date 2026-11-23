@@ -10,9 +10,19 @@ export type AdvisoryBookingStatus = "reserved" | "confirmed" | "released" | "can
 export type AdvisoryClientBrief = {
   bodyZone?: string;
   referral?: string;
+  /** @deprecated pregunta retirada; solo reservas antiguas. */
   personalValues?: string;
   collaborationMode?: string;
+  /** @deprecated pregunta retirada; solo reservas antiguas. */
   openNote?: string;
+  /** Lo que más le gusta del estilo de Malianteo. */
+  styleLikes?: string;
+  /** Por qué cree que Malianteo es el artista ideal. */
+  artistReasons?: string;
+  /** Estimado orientativo que vio el cliente. */
+  estimate?: string;
+  /** Referencias visuales (cuántas y dónde llegaron). */
+  references?: string;
 };
 
 export type AdvisoryBooking = {

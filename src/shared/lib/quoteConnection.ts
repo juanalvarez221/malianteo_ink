@@ -1,24 +1,12 @@
-import type { SiteCopyKey } from "@/shared/i18n/siteLanguage";
 import { markQuoteOnboardingComplete } from "@/shared/lib/quoteFlow";
 import {
   safeLocalStorageGet,
   safeLocalStorageSet,
 } from "@/shared/lib/safeStorage";
 
-export type ReferralSource = "instagram" | "tiktok" | "acquaintance" | "other";
-export type PersonalValue =
-  | "duality"
-  | "joy"
-  | "light"
-  | "inner_darkness"
-  | "vulnerability"
-  | "loyalty"
-  | "freedom"
-  | "resilience"
-  | "roots"
-  | "memory"
-  | "transcendence"
-  | "silence";
+export type ReferralSource = "instagram" | "tiktok" | "acquaintance" | "google" | "other";
+
+/** Cómo quiere trabajar la pieza el cliente. */
 export type AdjustmentOption =
   | "trust_artist"
   | "open_composition"
@@ -27,31 +15,19 @@ export type AdjustmentOption =
 export type QuoteConnection = {
   referralSources: ReferralSource[];
   referralOther?: string;
-  personalValues: PersonalValue[];
   adjustments: AdjustmentOption[];
-  openNote: string;
+  /** @deprecated Pregunta retirada; se conserva para leer registros antiguos. */
+  personalValues?: string[];
+  /** @deprecated Pregunta retirada ("¿Qué te trajo hasta aquí?"). */
+  openNote?: string;
 };
 
 export const REFERRAL_SOURCES: ReferralSource[] = [
   "instagram",
   "tiktok",
   "acquaintance",
+  "google",
   "other",
-];
-
-export const PERSONAL_VALUES: PersonalValue[] = [
-  "duality",
-  "joy",
-  "light",
-  "inner_darkness",
-  "vulnerability",
-  "loyalty",
-  "freedom",
-  "resilience",
-  "roots",
-  "memory",
-  "transcendence",
-  "silence",
 ];
 
 export const ADJUSTMENT_OPTIONS: AdjustmentOption[] = [
@@ -59,56 +35,6 @@ export const ADJUSTMENT_OPTIONS: AdjustmentOption[] = [
   "open_composition",
   "fixed_idea_only",
 ];
-
-/** Opción más cerrada: sin asesoría ni evolución de la idea. */
-export const REJECTED_COLLABORATION_OPTION: AdjustmentOption = "fixed_idea_only";
-
-export function isRejectedCollaboration(adjustments: AdjustmentOption[]): boolean {
-  return adjustments.includes(REJECTED_COLLABORATION_OPTION);
-}
-
-export type ConnectionSelectionMode = "single" | "multiple";
-
-/** Modo de selección por bloque del paso de conexión. */
-export const CONNECTION_SELECTION_MODES = {
-  referral: "single",
-  values: "multiple",
-  adjustments: "single",
-} as const satisfies Record<string, ConnectionSelectionMode>;
-
-export const REFERRAL_LABEL_KEYS: Record<ReferralSource, SiteCopyKey> = {
-  instagram: "quoteConnectionReferralInstagram",
-  tiktok: "quoteConnectionReferralTiktok",
-  acquaintance: "quoteConnectionReferralAcquaintance",
-  other: "quoteConnectionReferralOther",
-};
-
-export const VALUE_LABEL_KEYS: Record<PersonalValue, SiteCopyKey> = {
-  duality: "quoteConnectionValueDuality",
-  joy: "quoteConnectionValueJoy",
-  light: "quoteConnectionValueLight",
-  inner_darkness: "quoteConnectionValueInnerDarkness",
-  vulnerability: "quoteConnectionValueVulnerability",
-  loyalty: "quoteConnectionValueLoyalty",
-  freedom: "quoteConnectionValueFreedom",
-  resilience: "quoteConnectionValueResilience",
-  roots: "quoteConnectionValueRoots",
-  memory: "quoteConnectionValueMemory",
-  transcendence: "quoteConnectionValueTranscendence",
-  silence: "quoteConnectionValueSilence",
-};
-
-export const ADJUSTMENT_LABEL_KEYS: Record<AdjustmentOption, SiteCopyKey> = {
-  trust_artist: "quoteConnectionAdjustTrust",
-  open_composition: "quoteConnectionAdjustComposition",
-  fixed_idea_only: "quoteConnectionAdjustFixed",
-};
-
-export const ADJUSTMENT_DETAIL_KEYS: Record<AdjustmentOption, SiteCopyKey> = {
-  trust_artist: "quoteConnectionAdjustTrustDetail",
-  open_composition: "quoteConnectionAdjustCompositionDetail",
-  fixed_idea_only: "quoteConnectionAdjustFixedDetail",
-};
 
 const QUOTE_CONNECTION_KEY = "quote_connection";
 
@@ -118,22 +44,17 @@ function isValidConnection(parsed: unknown): parsed is QuoteConnection {
   return (
     Array.isArray(data.referralSources) &&
     data.referralSources.length > 0 &&
-    Array.isArray(data.personalValues) &&
-    data.personalValues.every((value) => PERSONAL_VALUES.includes(value as PersonalValue)) &&
-    data.personalValues.length > 0 &&
+    data.referralSources.every((source) => REFERRAL_SOURCES.includes(source)) &&
     Array.isArray(data.adjustments) &&
-    data.adjustments.every((option) => ADJUSTMENT_OPTIONS.includes(option as AdjustmentOption)) &&
     data.adjustments.length > 0 &&
-    typeof data.openNote === "string"
+    data.adjustments.every((option) => ADJUSTMENT_OPTIONS.includes(option))
   );
 }
 
 export function saveQuoteConnection(connection: QuoteConnection) {
   if (typeof window === "undefined") return;
   safeLocalStorageSet(QUOTE_CONNECTION_KEY, JSON.stringify(connection));
-  if (!isRejectedCollaboration(connection.adjustments)) {
-    markQuoteOnboardingComplete();
-  }
+  markQuoteOnboardingComplete();
 }
 
 export function getQuoteConnection(): QuoteConnection | null {
@@ -152,76 +73,32 @@ export function getQuoteConnection(): QuoteConnection | null {
   }
 }
 
-export function formatReferralSummary(
-  connection: QuoteConnection,
-  t: (key: SiteCopyKey) => string,
-) {
-  const parts = connection.referralSources
-    .filter((source) => source !== "other")
-    .map((source) => t(REFERRAL_LABEL_KEYS[source]));
-  if (connection.referralSources.includes("other")) {
-    parts.push(`${t(REFERRAL_LABEL_KEYS.other)}: ${connection.referralOther?.trim() ?? ""}`);
-  }
-  return parts.join(", ");
-}
+/** Etiquetas en español para el brief de Malianteo (correo, agenda, admin). */
+const REFERRAL_BRIEF_LABELS: Record<ReferralSource, string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  acquaintance: "Recomendación",
+  google: "Google",
+  other: "Otro",
+};
 
-export function mapConnectionToSmartQuote(
-  connection: QuoteConnection,
-  t: (key: SiteCopyKey) => string,
-) {
-  return {
-    connectionAftercare: formatReferralSummary(connection, t),
-    connectionValues: connection.personalValues
-      .map((value) => t(VALUE_LABEL_KEYS[value]))
-      .join(", "),
-    connectionCollaboration: connection.adjustments
-      .map((option) => t(ADJUSTMENT_LABEL_KEYS[option]))
-      .join(", "),
-    connectionPurpose: connection.openNote.trim() || undefined,
-  };
-}
+const ADJUSTMENT_BRIEF_LABELS: Record<AdjustmentOption, string> = {
+  trust_artist: "Libertad creativa total",
+  open_composition: "Definir la dirección juntos",
+  fixed_idea_only: "Quiere su idea tal cual (sin cambios)",
+};
 
-export function formatQuoteConnectionForAdmin(connection: QuoteConnection): string {
-  const referralLabels: Record<ReferralSource, string> = {
-    instagram: "Instagram",
-    tiktok: "TikTok",
-    acquaintance: "Conocido/a",
-    other: "Otro",
-  };
-  const valueLabels: Record<PersonalValue, string> = {
-    duality: "Dualidad",
-    joy: "Alegría",
-    light: "Luz",
-    inner_darkness: "Oscuridad interna",
-    vulnerability: "Superación Personal",
-    loyalty: "Lealtad",
-    freedom: "Libertad",
-    resilience: "Resiliencia",
-    roots: "Raíces",
-    memory: "Memoria",
-    transcendence: "Trascendencia",
-    silence: "Silencio",
-  };
-  const adjustmentLabels: Record<AdjustmentOption, string> = {
-    trust_artist: "Libertad creativa completa",
-    open_composition: "Elegimos juntos la dirección del proyecto",
-    fixed_idea_only: "No estoy abierto a temáticas",
-  };
-
+export function describeConnectionForBrief(connection: QuoteConnection | null) {
+  if (!connection) return { referral: undefined, collaboration: undefined };
   const referral = connection.referralSources
     .map((source) =>
       source === "other"
         ? `Otro (${connection.referralOther?.trim() ?? ""})`
-        : referralLabels[source],
+        : REFERRAL_BRIEF_LABELS[source],
     )
     .join(", ");
-
-  return [
-    `Origen: ${referral}`,
-    `Valores: ${connection.personalValues.map((v) => valueLabels[v]).join(", ")}`,
-    `Ajustes: ${connection.adjustments.map((a) => adjustmentLabels[a]).join(", ")}`,
-    connection.openNote.trim() ? `Nota: ${connection.openNote.trim()}` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const collaboration = connection.adjustments
+    .map((option) => ADJUSTMENT_BRIEF_LABELS[option])
+    .join(", ");
+  return { referral: referral || undefined, collaboration: collaboration || undefined };
 }

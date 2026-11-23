@@ -28,14 +28,25 @@ type BookBody = {
   brief?: AdvisoryClientBrief;
 };
 
+const BRIEF_FIELDS = [
+  "bodyZone",
+  "referral",
+  "personalValues",
+  "collaborationMode",
+  "openNote",
+  "styleLikes",
+  "artistReasons",
+  "estimate",
+  "references",
+] as const satisfies ReadonlyArray<keyof AdvisoryClientBrief>;
+
 function sanitizeBrief(brief?: AdvisoryClientBrief): AdvisoryClientBrief | undefined {
-  if (!brief) return undefined;
+  if (!brief || typeof brief !== "object") return undefined;
   const clean: AdvisoryClientBrief = {};
-  if (brief.bodyZone?.trim()) clean.bodyZone = brief.bodyZone.trim();
-  if (brief.referral?.trim()) clean.referral = brief.referral.trim();
-  if (brief.personalValues?.trim()) clean.personalValues = brief.personalValues.trim();
-  if (brief.collaborationMode?.trim()) clean.collaborationMode = brief.collaborationMode.trim();
-  if (brief.openNote?.trim()) clean.openNote = brief.openNote.trim();
+  for (const field of BRIEF_FIELDS) {
+    const value = brief[field];
+    if (typeof value === "string" && value.trim()) clean[field] = value.trim().slice(0, 600);
+  }
   return Object.keys(clean).length ? clean : undefined;
 }
 
