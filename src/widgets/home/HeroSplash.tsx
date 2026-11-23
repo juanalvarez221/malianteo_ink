@@ -29,6 +29,10 @@ import { Tour2027 } from "@/widgets/home/Tour2027";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
 import { BRAND } from "@/shared/config/brand";
 import { EASE_OUT_EXPO, Reveal } from "@/shared/ui/Reveal";
+import { HeroScrollCue } from "@/widgets/home/HeroScrollCue";
+
+/** Primera sección después del hero (destino de la flecha). */
+const FIRST_SECTION_ID = "inicio-identidad";
 
 type HeroSplashProps = {
   backgroundImageUrl: string;
@@ -74,6 +78,8 @@ export function HeroSplash({
   const markScale = useTransform(scrollYProgress, [0, 0.55, 1], [0.92, 1.02, 1.14]);
   const subtitleY = useTransform(scrollYProgress, [0, 1], [0, 52]);
   const subtitleOpacity = useTransform(scrollYProgress, [0, 1], [1, 0.4]);
+  // La flecha cumple su función al empezar a bajar: se apaga rápido.
+  const cueOpacity = useTransform(scrollYProgress, [0, 0.16], [1, 0]);
 
   useEffect(() => {
     if (!useHeroCarousel) return;
@@ -105,10 +111,15 @@ export function HeroSplash({
           style={reduce ? undefined : { y: imageY, scale: imageScale, opacity: heroOpacity }}
         >
           {backgroundVideoUrl ? (
+            // Recorte superior: el video es más alto que la pantalla y sobra
+            // por arriba, así rostro y mano quedan sobre la firma y el botón
+            // sin dejar franjas vacías abajo. En pantallas anchas el video se
+            // ajusta por ancho y el mismo recorte lo sube la mitad, por eso
+            // el porcentaje es mayor.
             <video
               key={backgroundVideoUrl}
               src={backgroundVideoUrl}
-              className="h-full w-full object-cover object-center"
+              className="absolute inset-x-0 -top-[18%] h-[118%] w-full object-cover object-center md:-top-[22%] md:h-[122%]"
               autoPlay
               muted
               loop
@@ -138,13 +149,21 @@ export function HeroSplash({
               </motion.div>
             </AnimatePresence>
           )}
+          {/* Base oscura bajo la firma, el botón y la flecha: limpia el fondo
+              (letras de la ropa) y da contraste sin tocar el rostro. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-black/90 via-black/50 to-transparent"
+          />
         </motion.div>
 
         <div className="absolute inset-0 z-[2] bg-[radial-gradient(900px_500px_at_50%_0%,rgba(168,85,247,0.34),transparent_60%),radial-gradient(560px_280px_at_22%_16%,rgba(147,51,234,0.18),transparent_64%)]" />
         <div className="absolute inset-0 z-[2] bg-gradient-to-b from-transparent via-black/35 to-black/95" />
         <div className="absolute inset-0 z-[2] shadow-[inset_0_0_160px_40px_rgba(0,0,0,0.85)]" />
 
-        <div className="absolute inset-x-0 top-0 z-[4] flex h-[100svh] w-full flex-col items-center justify-end px-6 pb-24 text-center md:pb-28">
+        {/* pb en celular: la flecha queda por encima del botón flotante de
+            contacto y su aviso "Toca aquí" (abajo a la derecha). */}
+        <div className="absolute inset-x-0 top-0 z-[4] flex h-[100svh] w-full flex-col items-center justify-end px-6 pb-[calc(5.75rem+env(safe-area-inset-bottom))] text-center md:pb-10">
           {wordmarkSrc ? (
             <motion.div
               style={reduce ? undefined : { y: markY, opacity: markOpacity, scale: markScale }}
@@ -199,12 +218,24 @@ export function HeroSplash({
               </span>
             </Link>
           </motion.div>
+
+          <motion.div
+            style={reduce ? undefined : { opacity: cueOpacity }}
+            className="mt-5 md:mt-6"
+          >
+            <motion.div {...enter(0.6, 8)}>
+              <HeroScrollCue targetId={FIRST_SECTION_ID} />
+            </motion.div>
+          </motion.div>
         </div>
 
         <div className="absolute bottom-0 z-20 h-1 w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </section>
 
-      <section className="relative z-20 mx-auto w-full max-w-6xl px-6 py-14 md:py-20">
+      <section
+        id={FIRST_SECTION_ID}
+        className="relative z-20 mx-auto w-full max-w-6xl px-6 py-14 md:py-20"
+      >
         <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-[rgba(20,20,20,0.6)] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.3)] md:p-8">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(520px_220px_at_10%_0%,rgba(168,85,247,0.2),transparent_58%),radial-gradient(620px_260px_at_100%_100%,rgba(124,58,237,0.16),transparent_60%)]" />
           <div className="relative z-10">

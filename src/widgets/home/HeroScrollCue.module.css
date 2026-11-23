@@ -1,0 +1,55 @@
+/* Flecha "sigue bajando" del hero: discreta, táctil y sin texto. */
+
+.cue {
+  display: inline-flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(5, 5, 8, 0.38);
+  color: rgba(244, 244, 245, 0.88);
+  box-shadow: 0 10px 26px -14px rgba(0, 0, 0, 0.9);
+  transition:
+    border-color 200ms var(--ease-out-ui),
+    background-color 200ms var(--ease-out-ui),
+    color 200ms var(--ease-out-ui),
+    transform 140ms var(--ease-out-ui);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cue:hover {
+    border-color: rgba(196, 181, 253, 0.65);
+    background: rgba(124, 58, 237, 0.24);
+    color: #ffffff;
+  }
+}
+
+.cue:active {
+  transform: scale(0.94);
+}
+
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  animation: cue-drift 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes cue-drift {
+  0%,
+  100% {
+    transform: translateY(-2px);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translateY(4px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon {
+    animation: none;
+  }
+}
