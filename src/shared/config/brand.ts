@@ -26,6 +26,8 @@ export const WHATSAPP_MESSAGES = {
     "Hola Malianteo, te contacto desde la web. Estoy en medio de una cotización y necesito orientación para continuar.",
   quoteInProgressNamed:
     "Hola Malianteo, soy {name}. Te contacto desde la web: estoy en medio de una cotización y necesito orientación para continuar.",
+  tour2027:
+    "Hola Malianteo, te contacto desde la web. Quiero hacer una pieza contigo en el tour 2027 por Europa. ¿Me cuentas fechas y ciudades?",
 } as const;
 
 export function buildAdvisoryWhatsAppMessage({

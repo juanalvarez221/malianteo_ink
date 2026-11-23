@@ -296,7 +296,7 @@ export function SelectedWorks() {
           {media.map((item, i) => (
             <span key={`${selected}-${i}`} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/15">
               <span
-                className="block h-full origin-left rounded-full bg-gradient-to-r from-violet-300 to-fuchsia-300"
+                className="block h-full origin-left rounded-full bg-gradient-to-r from-violet-300 to-violet-500"
                 style={
                   i < step
                     ? { transform: "scaleX(1)" }

@@ -15,6 +15,8 @@ import { IdentityPortraits } from "@/widgets/home/IdentityPortraits";
 import { SelectedWorks } from "@/widgets/home/SelectedWorks";
 import { FourHandsWorks } from "@/widgets/home/FourHandsWorks";
 import { PresentationCta } from "@/widgets/home/PresentationCta";
+import { ContactLauncher } from "@/widgets/home/ContactLauncher";
+import { Tour2027, TourBadge } from "@/widgets/home/Tour2027";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
 import { BRAND } from "@/shared/config/brand";
 
@@ -77,7 +79,7 @@ export function HeroSplash({
     <main className="relative overflow-x-clip bg-black text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1100px_540px_at_8%_-8%,rgba(139,92,246,0.26),transparent_60%),radial-gradient(920px_480px_at_95%_6%,rgba(168,85,247,0.2),transparent_62%),radial-gradient(1200px_600px_at_50%_105%,rgba(91,33,182,0.2),transparent_64%)]" />
       <div className="pointer-events-none absolute -left-24 top-[36%] h-64 w-64 rounded-full bg-violet-500/18 blur-[95px] md:h-96 md:w-96" />
-      <div className="pointer-events-none absolute -right-16 top-[58%] h-64 w-64 rounded-full bg-fuchsia-500/14 blur-[95px] md:h-[26rem] md:w-[26rem]" />
+      <div className="pointer-events-none absolute -right-16 top-[58%] h-64 w-64 rounded-full bg-violet-600/16 blur-[95px] md:h-[26rem] md:w-[26rem]" />
       <div className="pointer-events-none absolute left-1/2 top-[74%] h-60 w-[82vw] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.2),transparent_68%)] blur-[46px]" />
       <section ref={sectionRef} className="relative h-[112dvh] w-full md:h-[118dvh]">
         <motion.div
@@ -127,6 +129,9 @@ export function HeroSplash({
         <div className="absolute inset-0 z-[2] shadow-[inset_0_0_160px_40px_rgba(0,0,0,0.85)]" />
 
         <div className="absolute inset-0 z-[4] flex h-[100dvh] w-full flex-col items-center justify-end px-6 pb-16 text-center md:pb-14">
+          <div className="mb-4 md:mb-6">
+            <TourBadge />
+          </div>
           {wordmarkSrc ? (
             <motion.div
               initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
@@ -180,13 +185,16 @@ export function HeroSplash({
           >
             <Link
               href="/cotizacion"
-              className="typo-cta group inline-flex w-full items-center justify-center gap-2 rounded-xl border border-violet-500/35 bg-gradient-to-r from-violet-700 to-fuchsia-600 px-5 py-3.5 text-[0.9rem] text-white shadow-[0_0_28px_rgba(139,92,246,0.3)] transition hover:-translate-y-0.5 hover:shadow-[0_0_34px_rgba(139,92,246,0.4)] active:translate-y-0 md:py-4"
+              className="btn-accent focus-ring typo-cta group inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 md:py-4"
             >
               {t("heroCta")}
               <span className="transition-transform group-hover:translate-x-1">
                 →
               </span>
             </Link>
+            <p className="mt-2.5 text-[11px] font-medium tracking-[0.04em] text-zinc-300/90 md:text-xs">
+              {t("heroCtaNote")}
+            </p>
           </motion.div>
 
           <motion.div
@@ -229,103 +237,13 @@ export function HeroSplash({
         </div>
       </motion.section>
 
+      <Tour2027 />
+
       <SelectedWorks />
       <FourHandsWorks />
       <PresentationCta />
 
-      <motion.aside
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.55, ease: "easeOut" }}
-        className="pointer-events-none fixed bottom-5 right-4 z-[70] flex flex-col items-center gap-3 md:bottom-6 md:right-5"
-        aria-label="Accesos rapidos sociales"
-      >
-        <motion.a
-          href="https://www.instagram.com/malianteo_ink/"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Ir al Instagram de Malianteo"
-          animate={{ y: [0, -3, 0], scale: [1, 1.02, 1] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-          whileHover={{ y: -4, scale: 1.05 }}
-          whileTap={{ scale: 0.97 }}
-          className="pointer-events-auto relative inline-flex h-14 w-14 items-center justify-center rounded-full"
-        >
-          <motion.span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 rounded-full bg-violet-300/55 blur-[12px]"
-            animate={{ opacity: [0, 0, 0.95, 0, 0, 0.72, 0], scale: [0.88, 0.88, 1.2, 1.24, 0.9, 1.16, 0.9] }}
-            transition={{
-              duration: 8.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-              times: [0, 0.54, 0.58, 0.63, 0.9, 0.94, 1],
-            }}
-          />
-          <motion.span
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[6px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-white/0 via-white/90 to-white/0 blur-[1px]"
-            animate={{ opacity: [0, 0, 1, 0, 0], rotate: [-24, -24, -18, -16, -24], scaleY: [0.9, 0.9, 1.15, 1.05, 0.9] }}
-            transition={{
-              duration: 8.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-              times: [0, 0.565, 0.585, 0.605, 1],
-            }}
-          />
-          <Image
-            src="/brand/instagram-bubble-clean.png"
-            alt="Instagram"
-            width={56}
-            height={56}
-            className="h-14 w-14 object-contain drop-shadow-[0_14px_28px_rgba(168,85,247,0.42)]"
-          />
-        </motion.a>
-
-        <motion.a
-          href="https://wa.me/573104798643?text=Hola%20Malianteo%2C%20quiero%20continuar%20mi%20cotizacion."
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Hablar por WhatsApp con Malianteo"
-          animate={{ y: [0, -3, 0], scale: [1, 1.02, 1] }}
-          transition={{ duration: 3.2, delay: 0.45, repeat: Infinity, ease: "easeInOut" }}
-          whileHover={{ y: -4, scale: 1.05 }}
-          whileTap={{ scale: 0.97 }}
-          className="pointer-events-auto relative inline-flex h-14 w-14 items-center justify-center rounded-full"
-        >
-          <motion.span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 rounded-full bg-fuchsia-300/55 blur-[12px]"
-            animate={{ opacity: [0, 0, 0.92, 0, 0, 0.68, 0], scale: [0.88, 0.88, 1.18, 1.22, 0.9, 1.14, 0.9] }}
-            transition={{
-              duration: 9.1,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 0.6,
-              times: [0, 0.56, 0.6, 0.64, 0.9, 0.95, 1],
-            }}
-          />
-          <motion.span
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[6px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-white/0 via-white/90 to-white/0 blur-[1px]"
-            animate={{ opacity: [0, 0, 1, 0, 0], rotate: [22, 22, 15, 14, 22], scaleY: [0.9, 0.9, 1.12, 1.04, 0.9] }}
-            transition={{
-              duration: 9.1,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 0.6,
-              times: [0, 0.59, 0.615, 0.64, 1],
-            }}
-          />
-          <Image
-            src="/brand/whatsapp-bubble-clean.png"
-            alt="WhatsApp"
-            width={56}
-            height={56}
-            className="h-14 w-14 object-contain drop-shadow-[0_14px_28px_rgba(139,92,246,0.38)]"
-          />
-        </motion.a>
-      </motion.aside>
+      <ContactLauncher />
     </main>
   );
 }

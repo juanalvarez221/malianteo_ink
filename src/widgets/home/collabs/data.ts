@@ -32,7 +32,7 @@ export const ARTISTS = {
   dannielCuervo: {
     name: "Danniel Cuervo",
     handle: "dannielcuervo",
-    // Pendiente: añadir "/artists/dannielcuervo.jpg" cuando llegue la foto.
+    avatar: "/artists/dannielcuervo.jpg",
     verified: true,
   },
 } as const satisfies Record<string, Artist>;

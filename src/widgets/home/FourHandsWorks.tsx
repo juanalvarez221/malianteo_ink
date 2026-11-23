@@ -271,7 +271,7 @@ function CollabPanel({
             <button
               type="button"
               onClick={() => onOpen(slide)}
-              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-black transition hover:bg-violet-200 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400"
+              className="btn-accent inline-flex h-11 shrink-0 items-center gap-2 rounded-full px-5 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-300"
             >
               {t("collabViewWork")}
               <Expand className="h-4 w-4" aria-hidden />

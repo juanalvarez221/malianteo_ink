@@ -20,13 +20,14 @@
   --palette-sand: #c4b5fd;
   --palette-honey: #a855f7;
   --palette-amber: #7c3aed;
-  --palette-terracotta: #c026d3;
+  /* Antes fucsia (#c026d3); la marca va solo en morados. */
+  --palette-terracotta: #6d28d9;
   --palette-ivory: #f4f4f5;
 
   /* Canales RGB para transparencias */
   --rgb-honey: 168, 85, 247;
   --rgb-amber: 124, 58, 237;
-  --rgb-terracotta: 192, 38, 211;
+  --rgb-terracotta: 109, 40, 217;
   --rgb-ivory: 244, 244, 245;
   --rgb-sand: 196, 181, 253;
   --rgb-camel: 167, 139, 250;
@@ -34,6 +35,32 @@
   --rgb-cacao: 24, 24, 27;
   --rgb-espresso: 11, 11, 13;
   --rgb-cafe: 5, 5, 8;
+
+  /*
+   * Morado de marca: una sola fuente para botones y acentos de todo el sitio.
+   * Solo violetas (nada de fucsia ni rosa). El degradado termina en #7c3aed
+   * para que el texto blanco mantenga contraste AA en todo el botón.
+   */
+  --brand-violet-950: #1c0a36;
+  --brand-violet-900: #2e1065;
+  --brand-violet-800: #4c1d95;
+  --brand-violet-700: #5b21b6;
+  --brand-violet-600: #6d28d9;
+  --brand-violet-500: #7c3aed;
+  --brand-violet-400: #8b5cf6;
+  --brand-violet-300: #a78bfa;
+  --brand-violet-200: #c4b5fd;
+  --brand-violet-100: #ede9fe;
+  --rgb-brand-violet: 124, 58, 237;
+  --brand-btn-bg: linear-gradient(135deg, #4c1d95 0%, #6d28d9 55%, #7c3aed 100%);
+  --brand-btn-border: rgba(196, 181, 253, 0.38);
+  --brand-btn-shadow:
+    0 12px 30px -14px rgba(124, 58, 237, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  --brand-btn-shadow-hover:
+    0 18px 38px -14px rgba(139, 92, 246, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  --ease-out-ui: cubic-bezier(0.23, 1, 0.32, 1);
 
   --font-stack-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-stack-display: var(--font-display), var(--font-inter), ui-sans-serif, sans-serif;
@@ -55,7 +82,7 @@
   --color-camel: #a78bfa;
   --color-sand: #c4b5fd;
   --color-honey: #a855f7;
-  --color-terracotta: #c026d3;
+  --color-terracotta: #6d28d9;
   --color-ivory: #f4f4f5;
 }
 
@@ -339,32 +366,54 @@ body {
   overflow-x: clip;
 }
 
-/* CTA principal: mismo degradado violeta → fucsia del resto del sitio */
+/* Botón principal de todo el sitio: morado de marca (tokens en :root). */
 .btn-accent {
-  border: 1px solid rgba(139, 92, 246, 0.45);
-  background: linear-gradient(90deg, #6d28d9 0%, #c026d3 100%);
+  border: 1px solid var(--brand-btn-border);
+  background: var(--brand-btn-bg);
   color: #ffffff;
-  box-shadow:
-    0 10px 28px -12px rgba(168, 85, 247, 0.65),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: var(--brand-btn-shadow);
   transition:
-    transform 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
+    transform 200ms var(--ease-out-ui),
+    border-color 200ms var(--ease-out-ui),
+    box-shadow 200ms var(--ease-out-ui),
+    filter 200ms var(--ease-out-ui);
 }
 
-.btn-accent:hover {
-  transform: translateY(-1px);
-  border-color: rgba(192, 132, 252, 0.7);
-  filter: brightness(1.08);
-  box-shadow:
-    0 16px 34px -12px rgba(168, 85, 247, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+@media (hover: hover) and (pointer: fine) {
+  .btn-accent:hover {
+    transform: translateY(-1px);
+    border-color: rgba(196, 181, 253, 0.62);
+    filter: brightness(1.12);
+    box-shadow: var(--brand-btn-shadow-hover);
+  }
 }
 
 .btn-accent:active {
   transform: translateY(0) scale(0.98);
+  transition-duration: 120ms;
+}
+
+/* Botón secundario de la home: contorno morado, mismo lenguaje. */
+.btn-outline-violet {
+  border: 1px solid rgba(167, 139, 250, 0.38);
+  background: rgba(124, 58, 237, 0.06);
+  color: #f5f3ff;
+  transition:
+    transform 200ms var(--ease-out-ui),
+    border-color 200ms var(--ease-out-ui),
+    background-color 200ms var(--ease-out-ui);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-outline-violet:hover {
+    border-color: rgba(196, 181, 253, 0.7);
+    background: rgba(124, 58, 237, 0.16);
+  }
+}
+
+.btn-outline-violet:active {
+  transform: scale(0.98);
+  transition-duration: 120ms;
 }
 
 

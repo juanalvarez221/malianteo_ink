@@ -1,4 +1,4 @@
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Phone } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 
 /** Redes usadas en contacto / gracias. */
@@ -14,7 +14,26 @@ type SocialBrandIconProps = {
   className?: string;
 };
 
-function InstagramMark({ className }: { className?: string }) {
+/** Globo con auricular, en el mismo trazo que InstagramMark. */
+export function WhatsAppMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3.5a8.5 8.5 0 0 0-7.36 12.75L3.5 20.5l4.38-1.12A8.5 8.5 0 1 0 12 3.5Z" />
+      <Phone x={7.6} y={7.6} size={8.8} strokeWidth={1.6} absoluteStrokeWidth />
+    </svg>
+  );
+}
+
+export function InstagramMark({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"

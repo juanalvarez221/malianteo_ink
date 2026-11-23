@@ -17,7 +17,7 @@ export function LanguagePrompt() {
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/15 bg-zinc-950/95 p-6 shadow-[0_28px_70px_-28px_rgba(0,0,0,0.95)]"
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(500px_220px_at_12%_0%,rgba(168,85,247,0.3),transparent_62%),radial-gradient(420px_220px_at_100%_100%,rgba(217,70,239,0.22),transparent_65%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(500px_220px_at_12%_0%,rgba(168,85,247,0.3),transparent_62%),radial-gradient(420px_220px_at_100%_100%,rgba(124,58,237,0.24),transparent_65%)]" />
 
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1.5">
@@ -42,7 +42,7 @@ export function LanguagePrompt() {
             >
               <p className="text-sm font-semibold text-violet-50">{t("languageEs")}</p>
               <p className="mt-1 text-xs text-violet-100/75">
-                Experiencia completa en espanol.
+                Todo el sitio en español.
               </p>
             </motion.button>
 
@@ -55,7 +55,7 @@ export function LanguagePrompt() {
             >
               <p className="text-sm font-semibold text-zinc-100">{t("languageEn")}</p>
               <p className="mt-1 text-xs text-zinc-300/80">
-                Full experience in English.
+                The whole site in English.
               </p>
             </motion.button>
           </div>

@@ -1,0 +1,357 @@
+/*
+ * TOUR 2027: banda morada en movimiento + banderas oficiales renderizadas
+ * como tela. Cada bandera se balancea suavemente desde el mástil (solo
+ * transform). Todo se pausa fuera de pantalla y queda quieto con
+ * movimiento reducido.
+ */
+
+.section {
+  --tour-ease: var(--ease-out-ui, cubic-bezier(0.23, 1, 0.32, 1));
+  --tour-sway: 6s;
+  --tour-marquee: 34s;
+
+  position: relative;
+  z-index: 20;
+  overflow-x: clip;
+  padding: 3rem 0 4.5rem;
+  scroll-margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .section {
+    padding: 4.5rem 0 6.5rem;
+  }
+}
+
+/* ── Banda tipo afiche de gira ─────────────────────────── */
+
+.band {
+  position: relative;
+  width: 112%;
+  margin-left: -6%;
+  padding: 0.95rem 0;
+  overflow: hidden;
+  border-block: 1px solid rgba(196, 181, 253, 0.35);
+  background: linear-gradient(
+    90deg,
+    var(--brand-violet-900) 0%,
+    var(--brand-violet-600) 50%,
+    var(--brand-violet-900) 100%
+  );
+  box-shadow: 0 24px 50px -26px rgba(var(--rgb-brand-violet), 0.9);
+  transform: rotate(-2.5deg);
+}
+
+.track {
+  display: flex;
+  width: max-content;
+}
+
+.section[data-active="true"] .track {
+  animation: tour-marquee var(--tour-marquee) linear infinite;
+}
+
+.group {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.bandItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0 1.4rem;
+}
+
+.bandWord {
+  color: #ffffff;
+  font-family: var(--font-display), var(--font-inter), ui-sans-serif, sans-serif;
+  font-size: clamp(0.95rem, 3.4vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.bandDot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  background: var(--brand-violet-200);
+  transform: rotate(45deg);
+}
+
+.miniFlag {
+  flex-shrink: 0;
+  width: 30px;
+  height: auto;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+/* ── Texto + banderas ──────────────────────────────────── */
+
+.inner {
+  display: grid;
+  gap: 2.75rem;
+  width: 100%;
+  max-width: 72rem;
+  margin: 3.25rem auto 0;
+  padding: 0 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .inner {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    align-items: center;
+    gap: 4.5rem;
+    margin-top: 5rem;
+  }
+}
+
+.title {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-display), var(--font-inter), ui-sans-serif, sans-serif;
+  font-size: clamp(2.7rem, 12.5vw, 5.75rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.body {
+  max-width: 31rem;
+  margin: 1.25rem 0 0;
+  color: rgba(245, 243, 255, 0.9);
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.note {
+  max-width: 31rem;
+  margin: 0.65rem 0 0;
+  color: rgba(196, 181, 253, 0.9);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 52px;
+  margin-top: 1.75rem;
+  padding: 0 1.5rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ctaIcon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.85;
+}
+
+.flags {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1.25rem;
+  row-gap: 1.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .flags {
+    column-gap: 2rem;
+    row-gap: 2.25rem;
+  }
+}
+
+.country {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  transition:
+    opacity 600ms var(--tour-ease),
+    transform 600ms var(--tour-ease);
+  transition-delay: calc(var(--i) * 90ms);
+}
+
+/* Ritmo de afiche: la columna derecha cuelga un poco más abajo. */
+.country:nth-child(even) {
+  margin-top: 1.75rem;
+}
+
+/* Solo se ocultan para revelarse si el JS ya montó (sin JS se ven igual). */
+.section[data-armed="true"][data-visible="false"] .country {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.mast {
+  position: relative;
+  display: block;
+  padding-left: 5px;
+}
+
+/* El render deja ~6.5% de aire arriba y abajo para la onda. */
+.pole {
+  position: absolute;
+  top: calc(6.5% - 10px);
+  bottom: -12px;
+  left: 0;
+  width: 3px;
+  border-radius: 3px;
+  background: linear-gradient(to bottom, var(--brand-violet-200), rgba(167, 139, 250, 0.12));
+}
+
+.pole::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--brand-violet-200);
+  box-shadow: 0 0 12px rgba(196, 181, 253, 0.8);
+  transform: translateX(-50%);
+}
+
+.flagFrame {
+  position: relative;
+  display: block;
+}
+
+/* Resplandor morado detrás de la tela (estático). */
+.flagFrame::after {
+  content: "";
+  position: absolute;
+  inset: 18% 8% 6% 8%;
+  z-index: -1;
+  border-radius: 10px;
+  background: rgba(var(--rgb-brand-violet), 0.32);
+  filter: blur(22px);
+}
+
+/* Filo de luz que sigue la silueta (sin él, el negro de Alemania se funde). */
+.flagImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 0% 50%;
+  filter: drop-shadow(0 0 0.8px rgba(255, 255, 255, 0.55));
+}
+
+.section[data-active="true"] .flagImage {
+  animation: tour-sway var(--tour-sway) ease-in-out infinite;
+  animation-delay: calc(var(--i) * -1.4s);
+}
+
+.name {
+  padding-left: 5px;
+  color: #ffffff;
+  font-family: var(--font-display), var(--font-inter), ui-sans-serif, sans-serif;
+  font-size: clamp(0.72rem, 2.6vw, 0.9rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ── Insignia del hero ─────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 40px;
+  padding: 0.35rem 1rem 0.35rem 0.7rem;
+  border: 1px solid rgba(196, 181, 253, 0.5);
+  border-radius: 999px;
+  background: rgba(22, 12, 40, 0.72);
+  box-shadow: 0 10px 26px -14px rgba(var(--rgb-brand-violet), 0.85);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 120ms var(--tour-ease),
+    border-color 200ms var(--tour-ease),
+    background-color 200ms var(--tour-ease);
+}
+
+.badge:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .badge:hover {
+    border-color: rgba(196, 181, 253, 0.85);
+    background: rgba(46, 16, 101, 0.8);
+  }
+}
+
+.badge:focus-visible {
+  outline: 2px solid var(--brand-violet-200);
+  outline-offset: 3px;
+}
+
+.badgeFlags {
+  display: inline-flex;
+  align-items: center;
+}
+
+.badgeFlag {
+  width: 18px;
+  height: auto;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1.5px rgba(22, 12, 40, 0.95);
+}
+
+.badgeFlag + .badgeFlag {
+  margin-left: -5px;
+}
+
+@keyframes tour-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes tour-sway {
+  0%,
+  100% {
+    transform: rotate(0.35deg) skewY(0.5deg);
+  }
+  50% {
+    transform: rotate(-0.45deg) skewY(-0.7deg) scaleX(0.988);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section[data-active="true"] .track,
+  .section[data-active="true"] .flagImage {
+    animation: none;
+  }
+
+  .section[data-armed="true"][data-visible="false"] .country {
+    transform: none;
+  }
+
+  .country {
+    transition: opacity 400ms linear;
+  }
+
+  .badge:active {
+    transform: none;
+  }
+}

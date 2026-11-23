@@ -1,0 +1,436 @@
+/*
+ * Botón flotante de contacto (home), en el morado de marca.
+ * Colores de botón: tokens globales (--brand-*) en globals.css.
+ * Tiempos, tamaño y curvas: aquí, en un solo lugar. Solo transform y opacity.
+ */
+
+.root {
+  --cl-ease-out: var(--ease-out-ui, cubic-bezier(0.23, 1, 0.32, 1));
+  --cl-dur-press: 120ms;
+  --cl-dur-exit: 160ms;
+  --cl-dur: 240ms;
+  --cl-dur-enter: 460ms;
+  --cl-stagger: 45ms;
+  --cl-halo-turn: 9s;
+
+  --cl-size: 60px;
+  --cl-panel: rgba(22, 12, 40, 0.95);
+  --cl-panel-hover: rgba(38, 20, 68, 0.97);
+  --cl-line: rgba(167, 139, 250, 0.3);
+  --cl-line-strong: rgba(196, 181, 253, 0.6);
+  --cl-text: #f5f3ff;
+
+  position: fixed;
+  right: max(1rem, calc(env(safe-area-inset-right) + 0.75rem));
+  bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.75rem));
+  z-index: 70;
+  width: var(--cl-size);
+  height: var(--cl-size);
+}
+
+@media (min-width: 768px) {
+  .root {
+    right: max(1.5rem, calc(env(safe-area-inset-right) + 1rem));
+    bottom: max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem));
+  }
+}
+
+/* Velo morado oscuro que enfoca las opciones; tocarlo cierra. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(10, 4, 20, 0.62);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--cl-dur-exit) var(--cl-ease-out);
+}
+
+.root[data-open="true"] .scrim {
+  opacity: 1;
+  pointer-events: auto;
+  transition-duration: var(--cl-dur);
+}
+
+/* ── Botón: foto del artista con aro morado ─────────────── */
+
+.trigger {
+  position: relative;
+  display: block;
+  width: var(--cl-size);
+  height: var(--cl-size);
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow:
+    0 18px 40px -14px rgba(0, 0, 0, 0.9),
+    0 0 30px rgba(var(--rgb-brand-violet), 0.45);
+  cursor: pointer;
+  opacity: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--cl-dur) var(--cl-ease-out);
+}
+
+.root[data-ready="true"] .trigger {
+  opacity: 1;
+  /* backwards: al terminar suelta el transform y deja trabajar hover/press. */
+  animation: cl-enter var(--cl-dur-enter) var(--cl-ease-out) backwards;
+}
+
+.trigger:active {
+  transform: scale(0.94);
+  transition-duration: var(--cl-dur-press);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trigger:hover {
+    transform: translateY(-2px);
+  }
+
+  .trigger:hover:active {
+    transform: scale(0.94);
+  }
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--brand-violet-200);
+  outline-offset: 4px;
+}
+
+/* Aro: degradado cónico en morados que gira despacio. */
+.halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.halo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    from 0deg,
+    var(--brand-violet-800),
+    var(--brand-violet-400),
+    var(--brand-violet-200),
+    var(--brand-violet-500),
+    var(--brand-violet-800)
+  );
+}
+
+.root[data-ready="true"] .halo::before {
+  animation: cl-spin var(--cl-halo-turn) linear infinite;
+}
+
+.root[data-open="true"] .halo::before {
+  animation-play-state: paused;
+}
+
+.face,
+.closeFace {
+  position: absolute;
+  inset: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+  transition:
+    opacity var(--cl-dur) var(--cl-ease-out),
+    transform var(--cl-dur) var(--cl-ease-out);
+}
+
+/* Fondo morado mientras llega la foto: nunca un círculo vacío. */
+.face {
+  border: 2px solid #0b0715;
+  background: var(--brand-btn-bg);
+}
+
+.closeFace {
+  display: grid;
+  place-items: center;
+  border: 2px solid #0b0715;
+  background: var(--brand-btn-bg);
+  color: #ffffff;
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.7);
+}
+
+.closeIcon {
+  width: 24px;
+  height: 24px;
+}
+
+.root[data-open="true"] .face {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+.root[data-open="true"] .closeFace {
+  opacity: 1;
+  transform: none;
+}
+
+/* Pulso del aro: lo dispara cada aviso. */
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid rgba(167, 139, 250, 0.85);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.root[data-pulse="on"] .ring {
+  animation: cl-ping 1300ms var(--cl-ease-out) 1;
+}
+
+/* ── Aviso periódico ("Toca aquí") ─────────────────────── */
+
+.nudge {
+  position: absolute;
+  top: 50%;
+  right: calc(var(--cl-size) + 14px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px 10px 16px;
+  border: 1px solid rgba(167, 139, 250, 0.5);
+  border-radius: 999px;
+  background: rgba(22, 12, 40, 0.96);
+  box-shadow: 0 14px 32px -14px rgba(var(--rgb-brand-violet), 0.8);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(10px, -50%) scale(0.94);
+  transform-origin: right center;
+  transition:
+    opacity var(--cl-dur-exit) var(--cl-ease-out),
+    transform var(--cl-dur-exit) var(--cl-ease-out);
+}
+
+/* Colita que apunta al botón. */
+.nudge::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -5px;
+  width: 9px;
+  height: 9px;
+  border-top: 1px solid rgba(167, 139, 250, 0.5);
+  border-right: 1px solid rgba(167, 139, 250, 0.5);
+  background: rgba(22, 12, 40, 0.96);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.nudge[data-visible="true"] {
+  opacity: 1;
+  transform: translate(0, -50%);
+  transition-duration: var(--cl-dur-enter);
+}
+
+.root[data-open="true"] .nudge {
+  opacity: 0;
+}
+
+.nudgeText {
+  display: inline-block;
+  animation: cl-swap 360ms var(--cl-ease-out) backwards;
+}
+
+.nudgeArrow {
+  width: 16px;
+  height: 16px;
+  color: var(--brand-violet-200);
+}
+
+.nudge[data-visible="true"] .nudgeArrow {
+  animation: cl-point 900ms var(--cl-ease-out) 300ms 2;
+}
+
+/* ── Opciones ──────────────────────────────────────────── */
+
+.menu {
+  position: absolute;
+  /* 6px alinea el centro de cada ícono con el centro del botón. */
+  right: 6px;
+  bottom: calc(var(--cl-size) + 12px);
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.root[data-open="true"] .menu {
+  pointer-events: auto;
+}
+
+.option {
+  display: flex;
+  opacity: 0;
+  transform: translateY(10px) scale(0.96);
+  transform-origin: bottom right;
+  transition:
+    opacity var(--cl-dur-exit) var(--cl-ease-out),
+    transform var(--cl-dur-exit) var(--cl-ease-out);
+}
+
+.root[data-open="true"] .option {
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--cl-dur);
+  transition-delay: calc(var(--i) * var(--cl-stagger));
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 6px 6px 6px 18px;
+  border: 1px solid var(--cl-line);
+  border-radius: 999px;
+  background: var(--cl-panel);
+  color: var(--cl-text);
+  box-shadow: 0 16px 32px -18px rgba(0, 0, 0, 0.95);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--cl-dur-press) var(--cl-ease-out),
+    background-color var(--cl-dur) var(--cl-ease-out),
+    border-color var(--cl-dur) var(--cl-ease-out),
+    filter var(--cl-dur) var(--cl-ease-out);
+}
+
+.item:active {
+  transform: scale(0.97);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--brand-violet-200);
+  outline-offset: 3px;
+}
+
+.itemPrimary {
+  border-color: var(--brand-btn-border);
+  background: var(--brand-btn-bg);
+  color: #ffffff;
+  box-shadow: var(--brand-btn-shadow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .item:hover {
+    border-color: var(--cl-line-strong);
+    background-color: var(--cl-panel-hover);
+  }
+
+  .itemPrimary:hover {
+    border-color: var(--cl-line-strong);
+    filter: brightness(1.12);
+  }
+}
+
+.glyph {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(var(--rgb-brand-violet), 0.24);
+  color: var(--brand-violet-100);
+}
+
+.glyph svg {
+  width: 18px;
+  height: 18px;
+}
+
+.itemPrimary .glyph {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+/* ── Keyframes ─────────────────────────────────────────── */
+
+@keyframes cl-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.9);
+  }
+}
+
+@keyframes cl-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes cl-ping {
+  0% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+@keyframes cl-swap {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes cl-point {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+/* Movimiento reducido: solo fundidos; el aro queda quieto y no late. */
+@media (prefers-reduced-motion: reduce) {
+  .root[data-ready="true"] .trigger,
+  .root[data-ready="true"] .halo::before,
+  .root[data-pulse="on"] .ring,
+  .nudgeText,
+  .nudge[data-visible="true"] .nudgeArrow {
+    animation: none;
+  }
+
+  .trigger:active,
+  .item:active,
+  .option,
+  .root[data-open="true"] .option,
+  .face,
+  .closeFace,
+  .root[data-open="true"] .face {
+    transform: none;
+  }
+
+  .root[data-open="true"] .option {
+    transition-delay: 0ms;
+  }
+
+  .nudge,
+  .nudge[data-visible="true"] {
+    transform: translate(0, -50%);
+  }
+}
