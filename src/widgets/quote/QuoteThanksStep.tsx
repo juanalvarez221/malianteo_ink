@@ -1,81 +1,196 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { ExternalLink, Heart } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { useReducedMotion } from "framer-motion";
+import { Check, ExternalLink } from "lucide-react";
+import { SocialBrandIcon } from "@/shared/ui/SocialBrandIcon";
+import { BRAND, WHATSAPP_MESSAGES, whatsappUrl } from "@/shared/config/brand";
 import { QuoteShell } from "@/widgets/quote/QuoteShell";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
+import { getQuoteCompletionType } from "@/shared/lib/quoteDraft";
+import { QUOTE_FLOW_PATHS, startNewQuoteSession } from "@/shared/lib/quoteFlow";
+
+gsap.registerPlugin(useGSAP);
+
+type AdvisoryConfirmation = {
+  label: string;
+  mode: "presencial" | "virtual";
+  whatsappUrl: string;
+  meetingLink?: string;
+};
 
 export function QuoteThanksStep() {
   const { t } = useSiteLanguage();
+  const reduceMotion = useReducedMotion();
+  const rootRef = useRef<HTMLElement>(null);
+  const [isAdvisory, setIsAdvisory] = useState(false);
+  const [advisoryConfirmation, setAdvisoryConfirmation] = useState<AdvisoryConfirmation | null>(
+    null,
+  );
+
+  useEffect(() => {
+    setIsAdvisory(getQuoteCompletionType() === "asesoria");
+    const raw = sessionStorage.getItem("quote_advisory_confirmation");
+    if (!raw) return;
+    try {
+      setAdvisoryConfirmation(JSON.parse(raw) as AdvisoryConfirmation);
+    } catch {
+      setAdvisoryConfirmation(null);
+    }
+  }, []);
+
+  useGSAP(
+    () => {
+      const root = rootRef.current;
+      if (!root) return;
+
+      if (reduceMotion) {
+        gsap.set(".quote-thanks__reveal", { clearProps: "all", opacity: 1, y: 0, scale: 1 });
+        return;
+      }
+
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      tl.fromTo(
+        ".quote-thanks__orb",
+        { opacity: 0, scale: 0.72 },
+        { opacity: 1, scale: 1, duration: 1.2, ease: "power2.out" },
+        0,
+      )
+        .fromTo(
+          ".quote-thanks__mark",
+          { opacity: 0, scale: 0.6, rotate: -12 },
+          { opacity: 1, scale: 1, rotate: 0, duration: 0.75, ease: "back.out(1.6)" },
+          0.2,
+        )
+        .fromTo(
+          ".quote-thanks__tag",
+          { opacity: 0, y: 12, filter: "blur(6px)" },
+          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.55 },
+          0.42,
+        )
+        .fromTo(
+          ".quote-thanks__title",
+          { opacity: 0, y: 28 },
+          { opacity: 1, y: 0, duration: 0.8 },
+          0.52,
+        )
+        .fromTo(
+          ".quote-thanks__body",
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.65 },
+          0.7,
+        )
+        .fromTo(
+          ".quote-thanks__slot",
+          { opacity: 0, y: 14, scale: 0.98 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.55 },
+          0.88,
+        )
+        .fromTo(
+          ".quote-thanks__actions > *",
+          { opacity: 0, y: 18 },
+          { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 },
+          1.0,
+        );
+
+      gsap.to(".quote-thanks__orb", {
+        scale: 1.06,
+        opacity: 0.88,
+        duration: 5.5,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut",
+        delay: 1.3,
+      });
+    },
+    { scope: rootRef, dependencies: [reduceMotion, isAdvisory, advisoryConfirmation?.label] },
+  );
+
+  const whatsappHref =
+    isAdvisory && advisoryConfirmation?.whatsappUrl
+      ? advisoryConfirmation.whatsappUrl
+      : whatsappUrl(WHATSAPP_MESSAGES.quoteFollowUp);
+
+  const title = isAdvisory ? t("quoteThanksAdvisoryTitle") : t("quoteThanksTitle");
+  const body = isAdvisory ? t("quoteThanksAdvisoryBody") : t("quoteThanksBody");
+  const primaryWhatsappLabel = isAdvisory
+    ? t("quoteThanksAdvisoryWhatsapp")
+    : t("quoteThanksWhatsappCta");
 
   return (
-    <QuoteShell brand="MALIANTEO">
-      <section className="relative mx-auto max-w-3xl">
-        <div className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-fuchsia-600/20 blur-[80px]" />
-        <div className="pointer-events-none absolute -right-10 bottom-0 h-44 w-44 rounded-full bg-violet-600/20 blur-[80px]" />
+    <QuoteShell showGreeting={false}>
+      <section ref={rootRef} className="quote-thanks" aria-labelledby="quote-thanks-title">
+        <div className="quote-thanks__ambient" aria-hidden>
+          <span className="quote-thanks__orb quote-thanks__reveal" />
+        </div>
 
-        <article className="glass-card relative overflow-hidden rounded-3xl border border-violet-400/20 p-6 text-center md:p-8">
-          <div className="absolute inset-0 bg-[radial-gradient(520px_220px_at_50%_0%,rgba(217,70,239,0.16),transparent_65%)]" />
+        <div className="quote-thanks__stage">
+          <div className="quote-thanks__mark quote-thanks__reveal" aria-hidden>
+            <Check className="h-7 w-7" strokeWidth={2.25} />
+          </div>
 
-          <div className="relative z-10">
-            <p className="typo-tech inline-flex items-center gap-2 uppercase tracking-[0.16em] text-violet-200/90">
-              <Heart className="h-4 w-4 text-fuchsia-300" />
-              {t("quoteThanksTag")}
-            </p>
+          <p className="quote-thanks__tag quote-thanks__reveal">{t("quoteThanksTag")}</p>
 
-            <h1 className="typo-section mt-3 text-[2rem] leading-[1.05] md:text-[2.8rem]">
-              {t("quoteThanksTitle")}
-            </h1>
+          <h1 id="quote-thanks-title" className="quote-thanks__title quote-thanks__reveal">
+            {title}
+          </h1>
 
-            <p className="typo-body mx-auto mt-4 max-w-2xl text-zinc-200">{t("quoteThanksBody")}</p>
-            <p className="typo-tech mx-auto mt-3 max-w-2xl text-zinc-400">{t("quoteThanksDataSaved")}</p>
+          <p className="quote-thanks__body quote-thanks__reveal">{body}</p>
 
-            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+          {isAdvisory && advisoryConfirmation ? (
+            <div className="quote-thanks__slot quote-thanks__reveal">
+              <p className="quote-thanks__slot-label">{t("quoteThanksAdvisorySlot")}</p>
+              <p className="quote-thanks__slot-value">{advisoryConfirmation.label}</p>
+              {advisoryConfirmation.meetingLink ? (
+                <a
+                  href={advisoryConfirmation.meetingLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="quote-thanks__meeting focus-ring"
+                >
+                  {t("quoteThanksMeetingCta")}
+                  <ExternalLink className="h-3.5 w-3.5" strokeWidth={2} />
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="quote-thanks__actions">
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="quote-thanks__cta quote-thanks__cta--primary focus-ring btn-accent"
+            >
+              <SocialBrandIcon network="whatsapp" className="h-8 w-8" />
+              {primaryWhatsappLabel}
+            </a>
+
+            <div className="quote-thanks__secondary">
               <a
-                href="https://www.instagram.com/malianteo_ink/"
+                href={BRAND.instagramUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="group inline-flex items-center justify-center gap-2 rounded-2xl border border-fuchsia-400/35 bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(217,70,239,0.45)]"
+                className="quote-thanks__cta quote-thanks__cta--ghost focus-ring"
               >
-                <span className="relative h-6 w-6 overflow-hidden rounded-full">
-                  <Image
-                    src="/brand/instagram-bubble-clean.png"
-                    alt="Instagram"
-                    fill
-                    className="object-contain"
-                  />
-                </span>
+                <SocialBrandIcon network="instagram" className="h-7 w-7" />
                 {t("quoteThanksInstagramCta")}
-                <ExternalLink className="h-4 w-4" />
               </a>
 
               <Link
-                href="/cotizacion"
-                className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-5 py-4 text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100 transition hover:bg-white/10"
+                href={QUOTE_FLOW_PATHS.quoteStart}
+                onClick={() => startNewQuoteSession()}
+                className="quote-thanks__link focus-ring"
               >
                 {t("quoteThanksNewQuoteCta")}
               </Link>
-
-              <a
-                href="https://wa.me/573104798643?text=Hola%20Malianteo%2C%20quiero%20seguir%20con%20mi%20proceso."
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/35 bg-emerald-500/15 px-5 py-4 text-sm font-semibold uppercase tracking-[0.14em] text-emerald-100 transition hover:bg-emerald-500/20"
-              >
-                <span className="relative h-6 w-6 overflow-hidden rounded-full">
-                  <Image
-                    src="/brand/whatsapp-bubble-clean.png"
-                    alt="WhatsApp"
-                    fill
-                    className="object-contain"
-                  />
-                </span>
-                {t("quoteThanksWhatsappCta")}
-              </a>
             </div>
           </div>
-        </article>
+        </div>
       </section>
     </QuoteShell>
   );

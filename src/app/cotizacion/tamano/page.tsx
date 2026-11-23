@@ -5,34 +5,35 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { QuoteShell } from "@/widgets/quote/QuoteShell";
 import { Check, ArrowRight } from "lucide-react";
+import { saveQuoteDraft, getQuoteDraft } from "@/shared/lib/quoteDraft";
+import {
+  QUOTE_FLOW_PATHS,
+  shouldSkipToQuote,
+} from "@/shared/lib/quoteFlow";
+import { useQuoteOnboardingGate } from "@/widgets/quote/useQuoteOnboardingGate";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
 
-type SizeOption = "pequeno" | "mediano" | "grande";
+type SizeOption = "mediano" | "grande";
 
 export default function CotizacionTamanoPage() {
   const router = useRouter();
   const { t } = useSiteLanguage();
-  const [size, setSize] = useState<SizeOption>("mediano");
+  const [size, setSize] = useState<SizeOption | null>(null);
+  const gateReady = useQuoteOnboardingGate();
 
   const options = useMemo(
     () =>
       [
         {
-          id: "pequeno" as const,
-          label: "Pequeño",
-          detail: "(6-10 cm)",
-          img: "/quote-sizes/small-reference.png",
-        },
-        {
           id: "mediano" as const,
-          label: "Mediano",
-          detail: "(15-25 cm)",
+          label: t("quoteSizeMediumLabel"),
+          detail: t("quoteSizeMediumDetail"),
           img: "/quote-sizes/medium-reference.png",
         },
         {
           id: "grande" as const,
-          label: "Grande",
-          detail: "(35-55 cm)",
+          label: t("quoteSizeLargeLabel"),
+          detail: t("quoteSizeLargeDetail"),
           img: "/quote-sizes/large-reference.png",
         },
       ] satisfies Array<{
@@ -41,39 +42,49 @@ export default function CotizacionTamanoPage() {
         detail: string;
         img: string;
       }>,
-    [],
+    [t],
   );
 
+  if (!gateReady) {
+    return (
+      <QuoteShell showGreeting={false}>
+        <div className="flex min-h-[40dvh] items-center justify-center">
+          <p className="typo-tech text-sm uppercase tracking-[0.18em] text-zinc-400">
+            Cargando…
+          </p>
+        </div>
+      </QuoteShell>
+    );
+  }
+
   return (
-    <QuoteShell brand="MALIANTEO">
+    <QuoteShell greetingKey={shouldSkipToQuote() ? "quoteGreetResume" : "quoteGreetSize"}>
       <section className="relative mb-8">
-        <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-violet-600/15 blur-[60px]" />
-        <p className="typo-tech mb-2 uppercase tracking-[0.16em] text-violet-200/85">
+        <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-zinc-600/12 blur-[60px]" />
+        <p className="typo-tech mb-2 uppercase tracking-[0.16em] text-zinc-400">
           {t("quoteSizeStep")}
         </p>
-        <h2 className="typo-section text-[2.2rem] leading-[1.05] md:text-[3.2rem]">
+        <h2 className="typo-section quote-step-title">
           {t("quoteSizeTitle")}
           <br />
           <span className="bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
             {t("quoteSizeTitle2")}
           </span>
         </h2>
-        <p className="typo-body mt-4 max-w-2xl leading-relaxed">
-          {t("quoteSizeBody")}
-        </p>
+        <p className="typo-body mt-4 max-w-2xl leading-relaxed">{t("quoteSizeBody")}</p>
       </section>
 
       <section className="mb-10">
         <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-violet-500/30 bg-violet-600/10">
-            <span className="text-[10px] font-bold text-white">1</span>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-zinc-500/30 bg-zinc-600/10">
+            <span className="text-[10px] font-bold text-white">3</span>
           </div>
           <h3 className="typo-subtitle text-sm uppercase tracking-[0.14em] text-zinc-200">
-            Tamaño aproximado
+            {t("quoteSizeSectionLabel")}
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mx-auto grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
           {options.map((o) => {
             const selected = size === o.id;
             return (
@@ -83,31 +94,31 @@ export default function CotizacionTamanoPage() {
                 onClick={() => setSize(o.id)}
                 className={[
                   "relative overflow-hidden rounded-xl p-4 transition-all duration-300",
-                  selected ? "glass-card-selected scale-[1.03]" : "glass-card",
+                  selected ? "glass-card-selected scale-[1.02]" : "glass-card",
                   !selected ? "hover:-translate-y-1" : "",
                 ].join(" ")}
               >
                 <div className="relative">
                   <div
                     className={[
-                      "relative mb-4 aspect-square max-h-44 w-full overflow-hidden rounded-lg border md:max-h-48",
+                      "relative mb-4 aspect-[3/4] w-full overflow-hidden rounded-lg border",
                       selected
-                        ? "border-violet-500/30 bg-black/60"
-                        : "border-white/5 bg-black/40",
+                        ? "border-zinc-500/30 bg-black/70"
+                        : "border-white/5 bg-black/50",
                     ].join(" ")}
                   >
-                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                     <Image
                       src={o.img}
                       alt={o.label}
                       fill
+                      sizes="(max-width: 640px) 100vw, 320px"
                       className={[
-                        "object-cover transition duration-500",
-                        selected ? "scale-105 brightness-110" : "opacity-70",
+                        "object-contain object-center p-1 transition duration-500",
+                        selected ? "brightness-110" : "opacity-80",
                       ].join(" ")}
                     />
                     {selected ? (
-                      <span className="absolute right-2 top-2 z-20 inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg">
+                      <span className="absolute right-2 top-2 z-20 inline-flex h-6 w-6 items-center justify-center rounded-full bg-zinc-600 text-white shadow-lg">
                         <Check className="h-4 w-4" />
                       </span>
                     ) : null}
@@ -119,8 +130,8 @@ export default function CotizacionTamanoPage() {
                     </span>
                     <span
                       className={[
-                        "mt-1 block text-sm font-semibold",
-                        selected ? "text-violet-200/80" : "text-zinc-300/80",
+                        "mt-1 block font-mono text-sm font-semibold tabular-nums tracking-wide",
+                        selected ? "text-zinc-200/85" : "text-zinc-300/80",
                       ].join(" ")}
                     >
                       {o.detail}
@@ -133,18 +144,34 @@ export default function CotizacionTamanoPage() {
         </div>
       </section>
 
-      <div className="mt-auto flex items-center justify-between gap-3 pt-6">
+      <div className="quote-step-footer mt-auto pt-6">
+        {!shouldSkipToQuote() ? (
+          <button
+            type="button"
+            onClick={() => router.push(QUOTE_FLOW_PATHS.connection)}
+            className="quote-step-footer-back rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:bg-white/8"
+          >
+            {t("commonBack")}
+          </button>
+        ) : null}
         <button
           type="button"
-          onClick={() => router.push("/cotizacion")}
-          className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:bg-white/8"
-        >
-          {t("commonBack")}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push(`/cotizacion/ubicacion?size=${size}`)}
-          className="group inline-flex items-center justify-center gap-2 rounded-lg border border-violet-500/35 bg-gradient-to-r from-violet-700 to-fuchsia-600 px-6 py-3 text-[14px] font-bold uppercase tracking-[0.2em] text-white transition hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,92,246,0.35)] active:translate-y-0"
+          onClick={() => {
+            if (!size) return;
+            saveQuoteDraft({
+              size,
+              zone: getQuoteDraft()?.zone,
+              zoneOther: getQuoteDraft()?.zoneOther,
+              notes: getQuoteDraft()?.notes ?? "",
+            });
+            router.push(`/cotizacion/ubicacion?size=${size}`);
+          }}
+          disabled={!size}
+          aria-disabled={!size}
+          className={[
+            "quote-step-footer-next btn-accent focus-ring typo-cta group inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 active:scale-[0.98]",
+            !size ? "cursor-not-allowed opacity-45" : "",
+          ].join(" ")}
         >
           {t("quoteContinue")}
           <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -153,4 +180,3 @@ export default function CotizacionTamanoPage() {
     </QuoteShell>
   );
 }
-

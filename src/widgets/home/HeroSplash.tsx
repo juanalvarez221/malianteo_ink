@@ -11,9 +11,12 @@ import {
 } from "framer-motion";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { ProjectsCarousel } from "@/widgets/home/ProjectsCarousel";
-import { MalianteoIntroCarousel } from "@/widgets/home/MalianteoIntroCarousel";
+import { IdentityPortraits } from "@/widgets/home/IdentityPortraits";
+import { SelectedWorks } from "@/widgets/home/SelectedWorks";
+import { FourHandsWorks } from "@/widgets/home/FourHandsWorks";
+import { PresentationCta } from "@/widgets/home/PresentationCta";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
+import { BRAND } from "@/shared/config/brand";
 
 type HeroSplashProps = {
   backgroundImageUrl: string;
@@ -71,7 +74,7 @@ export function HeroSplash({
   }, [heroImages.length, useHeroCarousel]);
 
   return (
-    <main className="relative overflow-hidden bg-black text-white">
+    <main className="relative overflow-x-clip bg-black text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1100px_540px_at_8%_-8%,rgba(139,92,246,0.26),transparent_60%),radial-gradient(920px_480px_at_95%_6%,rgba(168,85,247,0.2),transparent_62%),radial-gradient(1200px_600px_at_50%_105%,rgba(91,33,182,0.2),transparent_64%)]" />
       <div className="pointer-events-none absolute -left-24 top-[36%] h-64 w-64 rounded-full bg-violet-500/18 blur-[95px] md:h-96 md:w-96" />
       <div className="pointer-events-none absolute -right-16 top-[58%] h-64 w-64 rounded-full bg-fuchsia-500/14 blur-[95px] md:h-[26rem] md:w-[26rem]" />
@@ -141,8 +144,8 @@ export function HeroSplash({
               <Image
                 src={wordmarkSrc}
                 alt={artistName}
-                width={2200}
-                height={680}
+                width={BRAND.logo.width}
+                height={BRAND.logo.height}
                 priority
                 className="h-auto w-full object-contain"
               />
@@ -218,22 +221,17 @@ export function HeroSplash({
         <div className="glass-card relative overflow-hidden rounded-3xl p-5 md:p-8">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(520px_220px_at_10%_0%,rgba(168,85,247,0.2),transparent_58%),radial-gradient(620px_260px_at_100%_100%,rgba(124,58,237,0.16),transparent_60%)]" />
           <div className="relative z-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-200/80">
-              {t("identityTag")}
-            </p>
-            <h2 className="typo-section mt-2 max-w-4xl">{t("identityTitle")}</h2>
-            <p className="typo-body mt-3 max-w-3xl text-zinc-200">{t("identityP1")}</p>
+            <h2 className="typo-section max-w-4xl">{t("identityTitle")}</h2>
+            <p className="typo-body mt-3 max-w-2xl text-zinc-200">{t("identityP1")}</p>
 
-            <MalianteoIntroCarousel />
+            <IdentityPortraits />
           </div>
         </div>
-
-        <div className="relative mt-8 md:mt-10">
-          <div className="pointer-events-none absolute -left-8 -top-4 h-24 w-24 rounded-full bg-violet-500/15 blur-[42px]" />
-          <div className="pointer-events-none absolute -right-6 bottom-0 h-24 w-24 rounded-full bg-fuchsia-500/12 blur-[42px]" />
-          <ProjectsCarousel />
-        </div>
       </motion.section>
+
+      <SelectedWorks />
+      <FourHandsWorks />
+      <PresentationCta />
 
       <motion.aside
         initial={{ opacity: 0, y: 20 }}

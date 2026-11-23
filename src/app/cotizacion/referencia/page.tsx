@@ -18,10 +18,11 @@ export default async function CotizacionReferenciaPage({
   searchParams: SearchParams;
 }) {
   const params = await searchParams;
-  const size = getParam(params, "size", "mediano");
-  const zone = getParam(params, "zone", "pecho");
-  const style = getParam(params, "style", "Realismo oscuro");
-
-  return <QuoteReferenceStep size={size} zone={zone} style={style} />;
+  return (
+    <QuoteReferenceStep
+      size={getParam(params, "size", "mediano")}
+      zone={getParam(params, "zone", "")}
+      zoneOther={getParam(params, "zoneOther", "")}
+    />
+  );
 }
-

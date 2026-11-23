@@ -1,0 +1,858 @@
+{
+  "model": "malianteo_body_v1",
+  "version": "9.1-costal",
+  "geometryHash": "c62e81edaa1f",
+  "indexHash": "52494d471398c",
+  "vertexCount": 14517,
+  "indexCount": 80268,
+  "fields": [
+    {
+      "regionId": "full_chest",
+      "surfaceRegionId": "full_chest_surface",
+      "maskIndex": 9,
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_full_chest_sdf.bin",
+      "fieldHash": "cc4f1242dc879825",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "C07",
+      "anatomicalParameters": {
+        "infraclavicularOffsetMm": 14,
+        "upperCenterRiseMm": 3,
+        "inferiorCenterTransitionMm": 0,
+        "lateralInsetMm": 0
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_full_chest_refine.bin",
+        "hash": "b309a72b943d16e8",
+        "triangleCount": 156,
+        "bandMeters": 0.005,
+        "encoding": "u32-snorm16x3"
+      }
+    },
+    {
+      "regionId": "full_abdomen",
+      "visualRegionId": "full_abdomen_surface",
+      "surfaceRegionId": "full_abdomen_region",
+      "maskIndex": 11,
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_full_abdomen_sdf.bin",
+      "fieldHash": "30a41c0dcc820ab0",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "B01",
+      "anatomicalParameters": {
+        "pubicClearance": 0.014,
+        "inguinalSideRise": 0.01
+      },
+      "sharedBoundary": "full_chest",
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_full_abdomen_refine.bin",
+        "hash": "e624d3f9ecc9d40a",
+        "triangleCount": 225,
+        "bandMeters": 0.005,
+        "encoding": "u32-snorm16x3"
+      }
+    },
+    {
+      "regionId": "right_ribs",
+      "visualRegionId": "right_ribs_surface",
+      "surfaceRegionId": "right_ribs_region",
+      "maskIndex": 13,
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_right_ribs_sdf.bin",
+      "fieldHash": "f98b4f43fdd25853",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "V4.5",
+      "sourceCandidateId": "R02",
+      "anatomicalParameters": {
+        "posteriorCoverage": "medium",
+        "costalClearance": 0.028,
+        "uRibsSlices": 96
+      },
+      "sharedBoundary": "full_chest",
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_right_ribs_refine.bin",
+        "hash": "89633f2397a8cd60",
+        "triangleCount": 71,
+        "bandMeters": 0.005,
+        "encoding": "u32-snorm16x3"
+      }
+    },
+    {
+      "regionId": "left_ribs",
+      "visualRegionId": "left_ribs_surface",
+      "surfaceRegionId": "left_ribs_region",
+      "maskIndex": 12,
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_left_ribs_sdf.bin",
+      "fieldHash": "764c29af40b03841",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "side": "left",
+      "candidateId": "L02",
+      "sourceCandidateId": "L01",
+      "anatomicalParameters": {
+        "posteriorCoverage": "medium",
+        "costalClearance": 0.028,
+        "uRibsSlices": 96
+      },
+      "sharedBoundaries": [
+        "full_chest",
+        "full_abdomen",
+        "future_left_back_seam"
+      ],
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_left_ribs_refine.bin",
+        "hash": "b57e39e6bd36ce78",
+        "triangleCount": 71,
+        "bandMeters": 0.005,
+        "encoding": "u32-snorm16x3"
+      }
+    },
+    {
+      "regionId": "upper_back",
+      "visualRegionId": "upper_back_surface",
+      "surfaceRegionId": "upper_back_surface",
+      "maskIndex": 14,
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_upper_back_sdf.bin",
+      "fieldHash": "1a21f0cea6db047f",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "S02",
+      "anatomicalParameters": {
+        "offsetM": -0.012,
+        "sourceGate": "posterior-back-v51"
+      },
+      "sharedBoundaries": [
+        "right_ribs",
+        "left_ribs",
+        "lower_back"
+      ],
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_upper_back_refine.bin",
+        "hash": "4d366898782d2c7f",
+        "triangleCount": 1337,
+        "bandMeters": 0.005,
+        "encoding": "u32-snorm16x3"
+      }
+    },
+    {
+      "regionId": "lower_back",
+      "visualRegionId": "lower_back_surface",
+      "surfaceRegionId": "lower_back_surface",
+      "maskIndex": 15,
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_lower_back_sdf.bin",
+      "fieldHash": "7d3f51b45b93d940",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "S02",
+      "anatomicalParameters": {
+        "offsetM": 0.018,
+        "sourceGate": "lower-back-lumbar-raise",
+        "floorY": 0.972,
+        "seamY": 1.092
+      },
+      "sharedBoundaries": [
+        "right_ribs",
+        "left_ribs",
+        "upper_back"
+      ],
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_lower_back_refine.bin",
+        "hash": "4c956c30646eb298",
+        "triangleCount": 83,
+        "bandMeters": 0.005,
+        "encoding": "u32-snorm16x3"
+      }
+    },
+    {
+      "regionId": "full_back",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_full_back_sdf.bin",
+      "fieldHash": "82181ee4c73721a9",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "S02",
+      "anatomicalParameters": {
+        "offsetM": -0.012,
+        "sourceGate": "posterior-back-v51"
+      },
+      "sharedBoundaries": [
+        "right_ribs",
+        "left_ribs"
+      ],
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_full_back_refine.bin",
+        "hash": "c79f8241b89fecb2",
+        "triangleCount": 1337,
+        "bandMeters": 0.005,
+        "encoding": "u32-snorm16x3"
+      },
+      "hitVisualRegionIds": [
+        "upper_back_surface",
+        "lower_back_surface"
+      ]
+    },
+    {
+      "regionId": "neck_front",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_neck_front_sdf.bin?v=45583a99fef6a5d5",
+      "fieldHash": "45583a99fef6a5d5",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "N02",
+      "anatomicalParameters": {
+        "lateralBandOffsetMm": 0,
+        "sourceGate": "neck-quadrant-repair",
+        "pipelineVersion": "V6.3",
+        "yBot": 1.455,
+        "yTop": 1.582,
+        "rMax": 0.092
+      },
+      "boundaryHashes": {
+        "front_right_neck_seam": "e000d8c59f7e6fea",
+        "right_back_neck_seam": "9db0071f0dbd467c",
+        "back_left_neck_seam": "bc900453e22e3674",
+        "left_front_neck_seam": "fa0fb39857fc216a"
+      },
+      "visualRegionId": "neck_front_surface",
+      "surfaceRegionId": "neck_front_surface",
+      "maskIndex": 5
+    },
+    {
+      "regionId": "neck_right",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_neck_right_sdf.bin?v=c7c19743eeb5d7c8",
+      "fieldHash": "c7c19743eeb5d7c8",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "N02",
+      "anatomicalParameters": {
+        "lateralBandOffsetMm": 0,
+        "sourceGate": "neck-quadrant-repair",
+        "pipelineVersion": "V6.3",
+        "yBot": 1.455,
+        "yTop": 1.582,
+        "rMax": 0.092
+      },
+      "boundaryHashes": {
+        "front_right_neck_seam": "e000d8c59f7e6fea",
+        "right_back_neck_seam": "9db0071f0dbd467c",
+        "back_left_neck_seam": "bc900453e22e3674",
+        "left_front_neck_seam": "fa0fb39857fc216a"
+      },
+      "visualRegionId": "neck_right_surface",
+      "surfaceRegionId": "neck_right_surface",
+      "maskIndex": 8
+    },
+    {
+      "regionId": "neck_back",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_neck_back_sdf.bin?v=e62386ae9584c6d8",
+      "fieldHash": "e62386ae9584c6d8",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "N02",
+      "anatomicalParameters": {
+        "lateralBandOffsetMm": 0,
+        "sourceGate": "neck-quadrant-repair",
+        "pipelineVersion": "V6.3",
+        "yBot": 1.455,
+        "yTop": 1.582,
+        "rMax": 0.092
+      },
+      "boundaryHashes": {
+        "front_right_neck_seam": "e000d8c59f7e6fea",
+        "right_back_neck_seam": "9db0071f0dbd467c",
+        "back_left_neck_seam": "bc900453e22e3674",
+        "left_front_neck_seam": "fa0fb39857fc216a"
+      },
+      "visualRegionId": "neck_back_surface",
+      "surfaceRegionId": "neck_back_surface",
+      "maskIndex": 6
+    },
+    {
+      "regionId": "neck_left",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_neck_left_sdf.bin?v=1abf594b89e37ab2",
+      "fieldHash": "1abf594b89e37ab2",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "N02",
+      "anatomicalParameters": {
+        "lateralBandOffsetMm": 0,
+        "sourceGate": "neck-quadrant-repair",
+        "pipelineVersion": "V6.3",
+        "yBot": 1.455,
+        "yTop": 1.582,
+        "rMax": 0.092
+      },
+      "boundaryHashes": {
+        "front_right_neck_seam": "e000d8c59f7e6fea",
+        "right_back_neck_seam": "9db0071f0dbd467c",
+        "back_left_neck_seam": "bc900453e22e3674",
+        "left_front_neck_seam": "fa0fb39857fc216a"
+      },
+      "visualRegionId": "neck_left_surface",
+      "surfaceRegionId": "neck_left_surface",
+      "maskIndex": 7
+    },
+    {
+      "regionId": "full_neck",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_full_neck_sdf.bin?v=f9573effa3f0bfb1",
+      "fieldHash": "f9573effa3f0bfb1",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "N02",
+      "anatomicalParameters": {
+        "lateralBandOffsetMm": 0,
+        "sourceGate": "neck-quadrant-repair",
+        "pipelineVersion": "V6.3",
+        "yBot": 1.455,
+        "yTop": 1.582,
+        "rMax": 0.092
+      },
+      "boundaryHashes": {
+        "front_right_neck_seam": "e000d8c59f7e6fea",
+        "right_back_neck_seam": "9db0071f0dbd467c",
+        "back_left_neck_seam": "bc900453e22e3674",
+        "left_front_neck_seam": "fa0fb39857fc216a"
+      },
+      "hitVisualRegionIds": [
+        "neck_front_surface",
+        "neck_right_surface",
+        "neck_back_surface",
+        "neck_left_surface"
+      ]
+    },
+    {
+      "regionId": "right_shoulder",
+      "visualRegionId": "right_shoulder_surface",
+      "surfaceRegionId": "right_shoulder_surface",
+      "maskIndex": 16,
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_right_shoulder_sdf.bin?v=b213189a4f6b6d27",
+      "fieldHash": "b213189a4f6b6d27",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "SH02",
+      "anatomicalParameters": {
+        "deltoidInsertionOffsetMm": 0,
+        "sourceGate": "shoulders-v70",
+        "pipelineVersion": "V7.0",
+        "side": "right"
+      },
+      "boundaryHashes": {
+        "neck": "62137824e28a39e5",
+        "chest": "83d5660e5be14876",
+        "back": "20dab8a0ef2f6eb6",
+        "upperArm": "f603092bdd3ac2e3"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_right_shoulder_refine.bin?v=7fa63f0a95d7a90d",
+        "hash": "7fa63f0a95d7a90d",
+        "triangleCount": 121,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      }
+    },
+    {
+      "regionId": "left_shoulder",
+      "visualRegionId": "left_shoulder_surface",
+      "surfaceRegionId": "left_shoulder_surface",
+      "maskIndex": 17,
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_left_shoulder_sdf.bin?v=6cec9beae6491233",
+      "fieldHash": "6cec9beae6491233",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "SH02",
+      "anatomicalParameters": {
+        "deltoidInsertionOffsetMm": 0,
+        "sourceGate": "shoulders-v70",
+        "pipelineVersion": "V7.0",
+        "side": "left"
+      },
+      "boundaryHashes": {
+        "neck": "38d7dc8aa6c4ee6a",
+        "chest": "3e184ad1d9c01371",
+        "back": "98e57d9e41dbe414",
+        "upperArm": "2d3072c92f3d666e"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_left_shoulder_refine.bin?v=424bbcb6edb04649",
+        "hash": "424bbcb6edb04649",
+        "triangleCount": 120,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      }
+    },
+    {
+      "regionId": "right_biceps_region",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_right_biceps_sdf.bin?v=06cd4a99cc149e0c",
+      "fieldHash": "06cd4a99cc149e0c",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "UA02",
+      "anatomicalParameters": {
+        "bicepsBandOffsetMm": 0,
+        "sourceGate": "upper-arms-v80",
+        "pipelineVersion": "V8.0",
+        "side": "right",
+        "kind": "biceps"
+      },
+      "boundaryHashes": {
+        "shoulder": "b596246a65f6ba26",
+        "forearm": "c99c05240fbd7ab9",
+        "medial": "4c0969f9189e3b5e",
+        "lateral": "bb8ac613e344d603"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_right_biceps_refine.bin?v=2f814a76008087c7",
+        "hash": "2f814a76008087c7",
+        "triangleCount": 128,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "visualRegionId": "right_biceps_surface",
+      "surfaceRegionId": "right_biceps_surface",
+      "maskIndex": 18
+    },
+    {
+      "regionId": "right_triceps_region",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_right_triceps_sdf.bin?v=69eccf8116f61a1c",
+      "fieldHash": "69eccf8116f61a1c",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "UA02",
+      "anatomicalParameters": {
+        "bicepsBandOffsetMm": 0,
+        "sourceGate": "upper-arms-v80",
+        "pipelineVersion": "V8.0",
+        "side": "right",
+        "kind": "triceps"
+      },
+      "boundaryHashes": {
+        "shoulder": "b596246a65f6ba26",
+        "forearm": "c99c05240fbd7ab9",
+        "medial": "4c0969f9189e3b5e",
+        "lateral": "bb8ac613e344d603"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_right_triceps_refine.bin?v=fb16852adab02c60",
+        "hash": "fb16852adab02c60",
+        "triangleCount": 85,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "visualRegionId": "right_triceps_surface",
+      "surfaceRegionId": "right_triceps_surface",
+      "maskIndex": 20
+    },
+    {
+      "regionId": "right_upper_arm",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_right_upper_arm_sdf.bin?v=9ba461332242346a",
+      "fieldHash": "9ba461332242346a",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "UA02",
+      "anatomicalParameters": {
+        "bicepsBandOffsetMm": 0,
+        "sourceGate": "upper-arms-v80",
+        "pipelineVersion": "V8.0",
+        "side": "right",
+        "kind": "upper_arm"
+      },
+      "boundaryHashes": {
+        "shoulder": "b596246a65f6ba26",
+        "forearm": "c99c05240fbd7ab9",
+        "medial": "4c0969f9189e3b5e",
+        "lateral": "bb8ac613e344d603"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_right_upper_arm_refine.bin?v=69bb7ba512022f76",
+        "hash": "69bb7ba512022f76",
+        "triangleCount": 110,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "hitVisualRegionIds": [
+        "right_biceps_surface",
+        "right_triceps_surface"
+      ]
+    },
+    {
+      "regionId": "left_biceps_region",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_left_biceps_sdf.bin?v=b01de8aa7bd86841",
+      "fieldHash": "b01de8aa7bd86841",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "UA02",
+      "anatomicalParameters": {
+        "bicepsBandOffsetMm": 0,
+        "sourceGate": "upper-arms-v80",
+        "pipelineVersion": "V8.0",
+        "side": "left",
+        "kind": "biceps"
+      },
+      "boundaryHashes": {
+        "shoulder": "77dc42dab44ccdc9",
+        "forearm": "68bbd1ab1d20f7a2",
+        "medial": "291aada0f1ae8f5e",
+        "lateral": "e11ff0cf4924137f"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_left_biceps_refine.bin?v=8939342dea90c8c1",
+        "hash": "8939342dea90c8c1",
+        "triangleCount": 128,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "visualRegionId": "left_biceps_surface",
+      "surfaceRegionId": "left_biceps_surface",
+      "maskIndex": 19
+    },
+    {
+      "regionId": "left_triceps_region",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_left_triceps_sdf.bin?v=0db8d34c26c306aa",
+      "fieldHash": "0db8d34c26c306aa",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "UA02",
+      "anatomicalParameters": {
+        "bicepsBandOffsetMm": 0,
+        "sourceGate": "upper-arms-v80",
+        "pipelineVersion": "V8.0",
+        "side": "left",
+        "kind": "triceps"
+      },
+      "boundaryHashes": {
+        "shoulder": "77dc42dab44ccdc9",
+        "forearm": "68bbd1ab1d20f7a2",
+        "medial": "291aada0f1ae8f5e",
+        "lateral": "e11ff0cf4924137f"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_left_triceps_refine.bin?v=161bf01daf9837f0",
+        "hash": "161bf01daf9837f0",
+        "triangleCount": 85,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "visualRegionId": "left_triceps_surface",
+      "surfaceRegionId": "left_triceps_surface",
+      "maskIndex": 21
+    },
+    {
+      "regionId": "left_upper_arm",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_left_upper_arm_sdf.bin?v=345e104eed76ee18",
+      "fieldHash": "345e104eed76ee18",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "UA02",
+      "anatomicalParameters": {
+        "bicepsBandOffsetMm": 0,
+        "sourceGate": "upper-arms-v80",
+        "pipelineVersion": "V8.0",
+        "side": "left",
+        "kind": "upper_arm"
+      },
+      "boundaryHashes": {
+        "shoulder": "77dc42dab44ccdc9",
+        "forearm": "68bbd1ab1d20f7a2",
+        "medial": "291aada0f1ae8f5e",
+        "lateral": "e11ff0cf4924137f"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_left_upper_arm_refine.bin?v=cd3c73a4993014f7",
+        "hash": "cd3c73a4993014f7",
+        "triangleCount": 110,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "hitVisualRegionIds": [
+        "left_biceps_surface",
+        "left_triceps_surface"
+      ]
+    },
+    {
+      "regionId": "right_forearm_inner_region",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_right_forearm_inner_sdf.bin?v=b94123164af4d7b5",
+      "fieldHash": "b94123164af4d7b5",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "FA02",
+      "anatomicalParameters": {
+        "innerBandOffsetMm": 0,
+        "sourceGate": "forearms-v90",
+        "pipelineVersion": "V9.0",
+        "side": "right",
+        "kind": "inner"
+      },
+      "boundaryHashes": {
+        "proximal": "c99c05240fbd7ab9",
+        "hand": "55cec1a260724d34",
+        "radial": "ebe9bb24d9eb5e78",
+        "ulnar": "13b339eb30ed4f68"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_right_forearm_inner_refine.bin?v=1388650ef064d281",
+        "hash": "1388650ef064d281",
+        "triangleCount": 141,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "visualRegionId": "right_forearm_inner_surface",
+      "surfaceRegionId": "right_forearm_inner_surface",
+      "maskIndex": 22
+    },
+    {
+      "regionId": "right_forearm_outer_region",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_right_forearm_outer_sdf.bin?v=f1b5c8b33b1775bb",
+      "fieldHash": "f1b5c8b33b1775bb",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "FA02",
+      "anatomicalParameters": {
+        "innerBandOffsetMm": 0,
+        "sourceGate": "forearms-v90",
+        "pipelineVersion": "V9.0",
+        "side": "right",
+        "kind": "outer"
+      },
+      "boundaryHashes": {
+        "proximal": "c99c05240fbd7ab9",
+        "hand": "55cec1a260724d34",
+        "radial": "ebe9bb24d9eb5e78",
+        "ulnar": "13b339eb30ed4f68"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_right_forearm_outer_refine.bin?v=ee4515ddd2e044eb",
+        "hash": "ee4515ddd2e044eb",
+        "triangleCount": 89,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "visualRegionId": "right_forearm_outer_surface",
+      "surfaceRegionId": "right_forearm_outer_surface",
+      "maskIndex": 24
+    },
+    {
+      "regionId": "right_forearm",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_right_forearm_sdf.bin?v=a1f37c38ada48878",
+      "fieldHash": "a1f37c38ada48878",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "FA02",
+      "anatomicalParameters": {
+        "innerBandOffsetMm": 0,
+        "sourceGate": "forearms-v90",
+        "pipelineVersion": "V9.0",
+        "side": "right",
+        "kind": "forearm"
+      },
+      "boundaryHashes": {
+        "proximal": "c99c05240fbd7ab9",
+        "hand": "55cec1a260724d34",
+        "radial": "ebe9bb24d9eb5e78",
+        "ulnar": "13b339eb30ed4f68"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_right_forearm_refine.bin?v=e19f02c6079665db",
+        "hash": "e19f02c6079665db",
+        "triangleCount": 42,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "hitVisualRegionIds": [
+        "right_forearm_inner_surface",
+        "right_forearm_outer_surface"
+      ]
+    },
+    {
+      "regionId": "left_forearm_inner_region",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_left_forearm_inner_sdf.bin?v=2b017cd48b18f4ba",
+      "fieldHash": "2b017cd48b18f4ba",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "FA02",
+      "anatomicalParameters": {
+        "innerBandOffsetMm": 0,
+        "sourceGate": "forearms-v90",
+        "pipelineVersion": "V9.0",
+        "side": "left",
+        "kind": "inner"
+      },
+      "boundaryHashes": {
+        "proximal": "68bbd1ab1d20f7a2",
+        "hand": "86d76b999348171f",
+        "radial": "53ffb8c9750fcc1c",
+        "ulnar": "25c6d9e312b61d93"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_left_forearm_inner_refine.bin?v=bc34d462a689ba65",
+        "hash": "bc34d462a689ba65",
+        "triangleCount": 142,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "visualRegionId": "left_forearm_inner_surface",
+      "surfaceRegionId": "left_forearm_inner_surface",
+      "maskIndex": 23
+    },
+    {
+      "regionId": "left_forearm_outer_region",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_left_forearm_outer_sdf.bin?v=649bf0c5c252e315",
+      "fieldHash": "649bf0c5c252e315",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "FA02",
+      "anatomicalParameters": {
+        "innerBandOffsetMm": 0,
+        "sourceGate": "forearms-v90",
+        "pipelineVersion": "V9.0",
+        "side": "left",
+        "kind": "outer"
+      },
+      "boundaryHashes": {
+        "proximal": "68bbd1ab1d20f7a2",
+        "hand": "86d76b999348171f",
+        "radial": "53ffb8c9750fcc1c",
+        "ulnar": "25c6d9e312b61d93"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_left_forearm_outer_refine.bin?v=850123f6f72eee80",
+        "hash": "850123f6f72eee80",
+        "triangleCount": 86,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "visualRegionId": "left_forearm_outer_surface",
+      "surfaceRegionId": "left_forearm_outer_surface",
+      "maskIndex": 25
+    },
+    {
+      "regionId": "left_forearm",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "fieldUrl": "/models/interaction/fields/malianteo_body_v1_left_forearm_sdf.bin?v=2e29c95a262ddd7e",
+      "fieldHash": "2e29c95a262ddd7e",
+      "encoding": "snorm16",
+      "distanceRangeMeters": 0.02,
+      "candidateId": "FA02",
+      "anatomicalParameters": {
+        "innerBandOffsetMm": 0,
+        "sourceGate": "forearms-v90",
+        "pipelineVersion": "V9.0",
+        "side": "left",
+        "kind": "forearm"
+      },
+      "boundaryHashes": {
+        "proximal": "68bbd1ab1d20f7a2",
+        "hand": "86d76b999348171f",
+        "radial": "53ffb8c9750fcc1c",
+        "ulnar": "25c6d9e312b61d93"
+      },
+      "refinement": {
+        "url": "/models/interaction/fields/malianteo_body_v1_left_forearm_refine.bin?v=8770ee6ad8cc05f4",
+        "hash": "8770ee6ad8cc05f4",
+        "triangleCount": 41,
+        "bandMeters": 0.005,
+        "encoding": "u32-t16-snorm16x3"
+      },
+      "hitVisualRegionIds": [
+        "left_forearm_inner_surface",
+        "left_forearm_outer_surface"
+      ]
+    },
+    {
+      "regionId": "right_flank",
+      "surfaceRegionId": "right_flank_region",
+      "maskIndex": 54,
+      "visualRegionId": "right_flank_surface",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "encoding": "categorical-only",
+      "note": "Costado: categorical mask until dedicated GDF bake"
+    },
+    {
+      "regionId": "left_flank",
+      "surfaceRegionId": "left_flank_region",
+      "maskIndex": 10,
+      "visualRegionId": "left_flank_surface",
+      "geometryHash": "c62e81edaa1f",
+      "indexHash": "52494d471398c",
+      "vertexCount": 14517,
+      "encoding": "categorical-only",
+      "note": "Costado: categorical mask until dedicated GDF bake"
+    }
+  ]
+}

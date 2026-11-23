@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+import { BRAND } from "@/shared/config/brand";
 import { usePathname } from "next/navigation";
 import {
   Home,
@@ -27,12 +29,14 @@ export function SideNav() {
       <div className="h-full w-[280px] p-6">
         <div className="app-surface noise h-full rounded-3xl p-5">
           <div className="flex items-center justify-between">
-            <div className="leading-none">
-              <p className="text-display text-5xl">MAL</p>
-              <p className="-mt-2 text-xs font-semibold tracking-[0.25em] text-zinc-400 uppercase">
-                Malianteo Ink
-              </p>
-            </div>
+            <Image
+              src={BRAND.logo.src}
+              alt={BRAND.name}
+              width={BRAND.logo.width}
+              height={BRAND.logo.height}
+              sizes="170px"
+              className="h-auto w-[170px] drop-shadow-[0_4px_14px_rgba(0,0,0,0.6)]"
+            />
             <div className="h-11 w-11 rounded-full border border-white/10 bg-white/5" />
           </div>
 

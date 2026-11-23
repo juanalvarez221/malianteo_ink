@@ -49,6 +49,8 @@ const STATUS_STYLES: Record<SmartQuoteStatus, string> = {
     "border-sky-500/30 bg-sky-500/10 text-sky-200",
   Enviada: "border-violet-500/30 bg-violet-600/15 text-violet-100",
   "Pagada/Agendada": "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+  "Asesoría Agendada": "border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200",
+  Descartada: "border-zinc-500/30 bg-zinc-500/10 text-zinc-300",
 };
 
 const CLIENT_CRM = [

@@ -1,179 +1,352 @@
-"use client";
+﻿"use client";
 
-import Image from "next/image";
-import type { CSSProperties } from "react";
-import { Bone, CircleDot, PersonStanding, Sparkles } from "lucide-react";
+import { useState, type CSSProperties } from "react";
+import { Bone, CircleDot, MapPin, PersonStanding } from "lucide-react";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
+import {
+  formatZoneDisplay,
+  ZONE_LABEL_KEYS,
+  type ZoneId,
+} from "@/shared/lib/quoteZones";
+import {
+  inferArmSelectionHintFromBodySpot,
+  isArmBodyMapSpotActive,
+  type ArmSelection,
+} from "@/shared/lib/armZoneParts";
+import {
+  inferLegSelectionFromBodySpot,
+  isLegBodyMapSpotActive,
+  type LegSelection,
+} from "@/shared/lib/legZoneParts";
+import type { BodyMapLaterality } from "@/shared/lib/limbLaterality";
+import type { HeadPartId } from "@/shared/lib/headZoneParts";
+import type { BackPartId } from "@/shared/lib/backZoneParts";
+import type { LegPartId } from "@/shared/lib/legZoneParts";
+import { getBodyMapViewLabel } from "@/widgets/quote/bodyMapViewLabels";
+import { BodyImageFrame } from "@/widgets/quote/BodyImageFrame";
+import { needsZoneRefinement } from "@/widgets/quote/ZoneFlowHelpers";
+import {
+  isZoneRefinementComplete,
+  ZoneRefinementFlow,
+} from "@/widgets/quote/ZoneRefinementFlow";
 
-export type ZoneId =
-  | "cabeza"
-  | "bicep"
-  | "tricep"
-  | "brazo"
-  | "antebrazo"
-  | "hombro"
-  | "pecho"
-  | "abdomen"
-  | "espalda"
-  | "pierna"
-  | "gluteo";
+export type { ZoneId };
 
-type ZoneMap = {
-  id: ZoneId;
-  label: string;
-};
+type BodyMapSide = "front" | "back";
 
-type Hotspot = {
+type BodyHotspot = {
   id: ZoneId;
   className: string;
   style?: CSSProperties;
+  laterality?: BodyMapLaterality;
+  legPart?: LegPartId;
 };
 
-const ZONES: ZoneMap[] = [
-  { id: "cabeza", label: "Cabeza" },
-  { id: "hombro", label: "Hombro" },
-  { id: "espalda", label: "Espalda" },
-  { id: "pecho", label: "Pecho" },
-  { id: "abdomen", label: "Abdomen" },
-  { id: "tricep", label: "Tricep" },
-  { id: "bicep", label: "Bicep" },
-  { id: "antebrazo", label: "Antebrazo" },
-  { id: "pierna", label: "Pierna" },
-  { id: "gluteo", label: "Gluteo" },
-  { id: "brazo", label: "Brazo" },
-];
+type Props = {
+  zone: ZoneId | null;
+  onZoneChange: (zone: ZoneId) => void;
+  zoneOther: string;
+  onZoneOtherChange: (value: string) => void;
+  headPart: HeadPartId | null;
+  onHeadPartChange: (part: HeadPartId) => void;
+  backPart: BackPartId | null;
+  onBackPartChange: (part: BackPartId) => void;
+  armSelection: ArmSelection | null;
+  onArmSelectionChange: (selection: ArmSelection | null) => void;
+  legSelection: LegSelection | null;
+  onLegSelectionChange: (selection: LegSelection) => void;
+};
 
-const POPULAR_ZONES: ZoneId[] = [
+const GENERAL_ZONE_IDS: ZoneId[] = [
   "cabeza",
   "hombro",
-  "espalda",
   "pecho",
   "abdomen",
-  "bicep",
-  "tricep",
-  "antebrazo",
+  "espalda",
+  "brazo",
   "pierna",
   "gluteo",
+  "otro",
 ];
 
-const FRONT_HOTSPOTS: Hotspot[] = [
-  { id: "cabeza", className: "left-[38.5%] top-[3.2%] h-[11.8%] w-[23%] rounded-[999px]" },
-  { id: "hombro", className: "left-[28%] top-[16%] h-[8%] w-[13.5%] rounded-[999px]" },
-  { id: "hombro", className: "left-[58.5%] top-[16%] h-[8%] w-[13.5%] rounded-[999px]" },
-  { id: "pecho", className: "left-[34.5%] top-[22.8%] h-[12%] w-[31%] rounded-[32%]" },
-  { id: "abdomen", className: "left-[36.5%] top-[35.8%] h-[12.8%] w-[27%] rounded-[28%]" },
+const ARM_BODY_ZONE_IDS: ZoneId[] = ["hombro", "bicep", "tricep", "antebrazo"];
+
+const FRONT_HOTSPOTS: BodyHotspot[] = [
   {
-    id: "bicep",
-    className: "left-[22.5%] top-[24%] h-[12.5%] w-[10.3%] rounded-[999px]",
-    style: { transform: "rotate(-12deg)" },
+    id: "cabeza",
+    className: "left-[42.4%] top-[4.6%] h-[10.4%] w-[15.4%] rounded-[999px]",
+  },
+  {
+    id: "hombro",
+    laterality: "derecha",
+    className: "left-[27.9%] top-[18.1%] h-[5.8%] w-[11.8%] rounded-[999px]",
+  },
+  {
+    id: "hombro",
+    laterality: "izquierda",
+    className: "left-[60.3%] top-[18.1%] h-[5.8%] w-[11.8%] rounded-[999px]",
+  },
+  {
+    id: "pecho",
+    className: "left-[35.7%] top-[24.4%] h-[9.4%] w-[28.8%] rounded-[28%]",
+  },
+  {
+    id: "abdomen",
+    className: "left-[37.9%] top-[35.2%] h-[12.8%] w-[24.1%] rounded-[24%]",
   },
   {
     id: "bicep",
-    className: "left-[67.2%] top-[24%] h-[12.5%] w-[10.3%] rounded-[999px]",
-    style: { transform: "rotate(12deg)" },
+    laterality: "derecha",
+    className: "left-[22.7%] top-[24.6%] h-[12.8%] w-[9.1%] rounded-[999px]",
+    style: { transform: "rotate(-9deg)" },
+  },
+  {
+    id: "bicep",
+    laterality: "izquierda",
+    className: "left-[68.2%] top-[24.6%] h-[12.8%] w-[9.1%] rounded-[999px]",
+    style: { transform: "rotate(9deg)" },
   },
   {
     id: "antebrazo",
-    className: "left-[17.8%] top-[35.8%] h-[15.4%] w-[9.8%] rounded-[999px]",
-    style: { transform: "rotate(-10deg)" },
+    laterality: "derecha",
+    className: "left-[17.4%] top-[37.1%] h-[15.1%] w-[8.3%] rounded-[999px]",
+    style: { transform: "rotate(-8deg)" },
   },
   {
     id: "antebrazo",
-    className: "left-[72.5%] top-[35.8%] h-[15.4%] w-[9.8%] rounded-[999px]",
-    style: { transform: "rotate(10deg)" },
+    laterality: "izquierda",
+    className: "left-[74.3%] top-[37.1%] h-[15.1%] w-[8.3%] rounded-[999px]",
+    style: { transform: "rotate(8deg)" },
   },
-  { id: "pierna", className: "left-[38.8%] top-[57.8%] h-[33.8%] w-[11.6%] rounded-[30%]" },
-  { id: "pierna", className: "left-[49.8%] top-[57.8%] h-[33.8%] w-[11.6%] rounded-[30%]" },
+  {
+    id: "pierna",
+    laterality: "derecha",
+    legPart: "muslo_anterior",
+    className: "left-[38.9%] top-[56.2%] h-[17.8%] w-[9.8%] rounded-[26%]",
+  },
+  {
+    id: "pierna",
+    laterality: "izquierda",
+    legPart: "muslo_anterior",
+    className: "left-[51.2%] top-[56.2%] h-[17.8%] w-[9.8%] rounded-[26%]",
+  },
+  {
+    id: "pierna",
+    laterality: "derecha",
+    legPart: "pierna_anterior",
+    className: "left-[38.8%] top-[74.2%] h-[17.9%] w-[8.9%] rounded-[24%]",
+  },
+  {
+    id: "pierna",
+    laterality: "izquierda",
+    legPart: "pierna_anterior",
+    className: "left-[52.1%] top-[74.2%] h-[17.9%] w-[8.9%] rounded-[24%]",
+  },
 ];
 
-const BACK_HOTSPOTS: Hotspot[] = [
-  { id: "cabeza", className: "left-[38.5%] top-[3.2%] h-[11.8%] w-[23%] rounded-[999px]" },
-  { id: "hombro", className: "left-[28%] top-[16%] h-[8%] w-[13.5%] rounded-[999px]" },
-  { id: "hombro", className: "left-[58.5%] top-[16%] h-[8%] w-[13.5%] rounded-[999px]" },
-  { id: "espalda", className: "left-[33.8%] top-[22.8%] h-[22.4%] w-[32.5%] rounded-[30%]" },
+const BACK_HOTSPOTS: BodyHotspot[] = [
   {
-    id: "tricep",
-    className: "left-[22.5%] top-[24.8%] h-[12.5%] w-[10.2%] rounded-[999px]",
-    style: { transform: "rotate(-12deg)" },
+    id: "cabeza",
+    className: "left-[42.4%] top-[4.6%] h-[10.4%] w-[15.4%] rounded-[999px]",
+  },
+  {
+    id: "hombro",
+    laterality: "izquierda",
+    className: "left-[27.9%] top-[18.1%] h-[5.8%] w-[11.8%] rounded-[999px]",
+  },
+  {
+    id: "hombro",
+    laterality: "derecha",
+    className: "left-[60.3%] top-[18.1%] h-[5.8%] w-[11.8%] rounded-[999px]",
+  },
+  {
+    id: "espalda",
+    className: "left-[33.5%] top-[22.6%] h-[23.2%] w-[33.3%] rounded-[24%]",
   },
   {
     id: "tricep",
-    className: "left-[67.3%] top-[24.8%] h-[12.5%] w-[10.2%] rounded-[999px]",
-    style: { transform: "rotate(12deg)" },
+    laterality: "izquierda",
+    className: "left-[22.9%] top-[24.9%] h-[12.4%] w-[8.9%] rounded-[999px]",
+    style: { transform: "rotate(-9deg)" },
+  },
+  {
+    id: "tricep",
+    laterality: "derecha",
+    className: "left-[68.1%] top-[24.9%] h-[12.4%] w-[8.9%] rounded-[999px]",
+    style: { transform: "rotate(9deg)" },
   },
   {
     id: "antebrazo",
-    className: "left-[18.2%] top-[36.6%] h-[15.2%] w-[9.8%] rounded-[999px]",
-    style: { transform: "rotate(-10deg)" },
+    laterality: "izquierda",
+    className: "left-[17.5%] top-[37.2%] h-[15%] w-[8.3%] rounded-[999px]",
+    style: { transform: "rotate(-8deg)" },
   },
   {
     id: "antebrazo",
-    className: "left-[72.1%] top-[36.6%] h-[15.2%] w-[9.8%] rounded-[999px]",
-    style: { transform: "rotate(10deg)" },
+    laterality: "derecha",
+    className: "left-[74.3%] top-[37.2%] h-[15%] w-[8.3%] rounded-[999px]",
+    style: { transform: "rotate(8deg)" },
   },
-  { id: "gluteo", className: "left-[38%] top-[47.2%] h-[9.6%] w-[11.4%] rounded-[45%]" },
-  { id: "gluteo", className: "left-[50.2%] top-[47.2%] h-[9.6%] w-[11.4%] rounded-[45%]" },
-  { id: "pierna", className: "left-[38.8%] top-[57.8%] h-[33.8%] w-[11.6%] rounded-[30%]" },
-  { id: "pierna", className: "left-[49.8%] top-[57.8%] h-[33.8%] w-[11.6%] rounded-[30%]" },
+  {
+    id: "gluteo",
+    laterality: "izquierda",
+    className: "left-[37.8%] top-[47.9%] h-[8.1%] w-[11.4%] rounded-[42%]",
+  },
+  {
+    id: "gluteo",
+    laterality: "derecha",
+    className: "left-[50.5%] top-[47.9%] h-[8.1%] w-[11.4%] rounded-[42%]",
+  },
+  {
+    id: "pierna",
+    laterality: "izquierda",
+    legPart: "muslo_posterior",
+    className: "left-[38.9%] top-[56.2%] h-[17.8%] w-[9.8%] rounded-[26%]",
+  },
+  {
+    id: "pierna",
+    laterality: "derecha",
+    legPart: "muslo_posterior",
+    className: "left-[51.2%] top-[56.2%] h-[17.8%] w-[9.8%] rounded-[26%]",
+  },
+  {
+    id: "pierna",
+    laterality: "izquierda",
+    legPart: "pierna_posterior",
+    className: "left-[38.8%] top-[74.2%] h-[17.9%] w-[8.9%] rounded-[24%]",
+  },
+  {
+    id: "pierna",
+    laterality: "derecha",
+    legPart: "pierna_posterior",
+    className: "left-[52.1%] top-[74.2%] h-[17.9%] w-[8.9%] rounded-[24%]",
+  },
 ];
+
+const BODY_HOTSPOTS: Record<BodyMapSide, BodyHotspot[]> = {
+  front: FRONT_HOTSPOTS,
+  back: BACK_HOTSPOTS,
+};
+
+const BODY_IMAGE: Record<BodyMapSide, string> = {
+  front: "/body/body-map-front.png",
+  back: "/body/body-map-back.png",
+};
+
+function isArmBodyZone(id: ZoneId): boolean {
+  return ARM_BODY_ZONE_IDS.includes(id);
+}
+
+function getZoneIcon(id: ZoneId) {
+  if (id === "espalda") return <PersonStanding className="h-4 w-4" />;
+  if (id === "pecho") return <Bone className="h-4 w-4" />;
+  if (id === "brazo" || id === "pierna") return <MapPin className="h-4 w-4" />;
+  return <CircleDot className="h-4 w-4" />;
+}
+
+function optionButtonClass(active: boolean) {
+  return [
+    "inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition active:scale-[0.98]",
+    active
+      ? "border-zinc-400/35 bg-zinc-600/14 text-zinc-100 shadow-[0_0_18px_rgba(82,82,91,0.16)]"
+      : "border-white/10 bg-white/5 text-zinc-200 hover:border-zinc-500/22 hover:bg-zinc-600/8",
+  ].join(" ");
+}
 
 function BodyMapImage({
   side,
   zone,
-  onZoneChange,
-  language,
+  armSelection,
+  legSelection,
+  onSpotClick,
 }: {
-  side: "front" | "back";
-  zone: ZoneId;
-  onZoneChange: (zone: ZoneId) => void;
-  language: "es" | "en";
+  side: BodyMapSide;
+  zone: ZoneId | null;
+  armSelection: ArmSelection | null;
+  legSelection: LegSelection | null;
+  onSpotClick: (spot: BodyHotspot, side: BodyMapSide) => void;
 }) {
-  const hotspots = side === "front" ? FRONT_HOTSPOTS : BACK_HOTSPOTS;
-  const src = side === "front" ? "/body/body-map-front.png" : "/body/body-map-back.png";
+  const { t, language } = useSiteLanguage();
+
+  function isSpotActive(spot: BodyHotspot) {
+    if (!zone) return false;
+
+    if (zone === "brazo") {
+      if (
+        isArmBodyMapSpotActive(
+          side,
+          spot.id,
+          spot.laterality,
+          armSelection,
+        )
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
+    if (zone === "pierna") {
+      if (
+        isLegBodyMapSpotActive(
+          side,
+          spot.legPart,
+          spot.laterality,
+          legSelection,
+        )
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
+    return zone === spot.id;
+  }
 
   return (
     <div className="glass-card relative overflow-hidden rounded-2xl p-3">
-      <div className="relative mx-auto h-[390px] w-full max-w-[260px] overflow-hidden rounded-xl border border-white/12 bg-black/20 sm:h-[460px] sm:max-w-[300px]">
-        <Image
-          src={src}
-          alt={side === "front" ? "Mapa corporal frontal" : "Mapa corporal trasero"}
-          fill
-          quality={100}
-          sizes="(max-width: 640px) 260px, 300px"
-          className="object-cover"
-          priority
-        />
+      <BodyImageFrame
+        src={BODY_IMAGE[side]}
+        alt={
+          side === "front"
+            ? language === "en"
+              ? "Front body map"
+              : "Mapa corporal frontal"
+            : language === "en"
+              ? "Back body map"
+              : "Mapa corporal posterior"
+        }
+        className="mx-auto w-full max-w-[min(100%,330px)]"
+        sizes="(max-width: 640px) 300px, 330px"
+        priority
+        quality={100}
+      >
+        {BODY_HOTSPOTS[side].map((spot, index) => {
+          const active = isSpotActive(spot);
+          const label = t(ZONE_LABEL_KEYS[spot.id]);
 
-        {hotspots.map((spot, index) => {
-          const active = zone === spot.id;
-          const label = ZONES.find((item) => item.id === spot.id)?.label ?? spot.id;
           return (
             <button
-              key={`${side}-${spot.id}-${index}`}
+              key={`${side}-${spot.id}-${spot.laterality ?? "center"}-${spot.legPart ?? "body"}-${index}`}
               type="button"
-              onClick={() => onZoneChange(spot.id)}
-              aria-label={`${label} (${side})`}
+              onClick={() => onSpotClick(spot, side)}
+              aria-label={label}
+              aria-pressed={active}
               style={spot.style}
               className={[
-                "absolute border transition-all duration-200",
+                "body-map-hotspot absolute z-10 outline-none touch-manipulation",
+                "focus-visible:ring-2 focus-visible:ring-zinc-300/80 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent",
                 spot.className,
-                active
-                  ? "border-violet-100/95 bg-violet-500/25 shadow-[0_0_0_1px_rgba(216,180,254,0.55)_inset,0_0_20px_rgba(168,85,247,0.4)]"
-                  : "border-white/28 bg-black/10 hover:border-violet-200/70 hover:bg-violet-500/14",
+                active ? "body-map-hotspot--active" : "body-map-hotspot--idle",
               ].join(" ")}
             />
           );
         })}
-      </div>
+      </BodyImageFrame>
 
       <span className="mt-2 block text-center text-xs font-semibold uppercase tracking-[0.16em] text-zinc-300">
-        {side === "front"
-          ? language === "en"
-            ? "Front view"
-            : "Vista frontal"
-          : language === "en"
-            ? "Back view"
-            : "Vista posterior"}
+        {getBodyMapViewLabel(side, language)}
       </span>
     </div>
   );
@@ -182,94 +355,199 @@ function BodyMapImage({
 export function BodyAreaSelector({
   zone,
   onZoneChange,
-}: {
-  zone: ZoneId;
-  onZoneChange: (zone: ZoneId) => void;
-}) {
-  const { language } = useSiteLanguage();
-  const progress = 50;
+  zoneOther,
+  onZoneOtherChange,
+  headPart,
+  onHeadPartChange,
+  backPart,
+  onBackPartChange,
+  armSelection,
+  onArmSelectionChange,
+  legSelection,
+  onLegSelectionChange,
+}: Props) {
+  const { t, language } = useSiteLanguage();
+  const [flowOpen, setFlowOpen] = useState(false);
+
+  const refinementComplete = isZoneRefinementComplete(
+    zone,
+    headPart,
+    backPart,
+    armSelection,
+    legSelection,
+  );
+
+  const selectionLabel = zone
+    ? formatZoneDisplay(zone, zoneOther, t, {
+        headPart: headPart ?? undefined,
+        backPart: backPart ?? undefined,
+        armLaterality: armSelection?.laterality,
+        armFaceScope: armSelection?.faceScope,
+        armPart: armSelection?.part ?? undefined,
+        legLaterality: legSelection?.laterality,
+        legFaceScope: legSelection?.faceScope,
+        legExtent: legSelection?.extent,
+      })
+    : language === "en"
+      ? "Pick an area"
+      : "Elige una zona";
+
+  function handleBodySpotClick(spot: BodyHotspot, side: BodyMapSide) {
+    if (isArmBodyZone(spot.id)) {
+      const hint = inferArmSelectionHintFromBodySpot(spot.id, side);
+      onZoneChange("brazo");
+      onArmSelectionChange(hint ?? {});
+      setFlowOpen(true);
+      return;
+    }
+
+    if (spot.id === "pierna" && spot.legPart && spot.laterality) {
+      onZoneChange("pierna");
+      onLegSelectionChange(inferLegSelectionFromBodySpot(spot.legPart, spot.laterality));
+      setFlowOpen(true);
+      return;
+    }
+
+    onZoneChange(spot.id);
+    if (needsZoneRefinement(spot.id)) {
+      setFlowOpen(true);
+    }
+  }
+
+  function handleZoneButtonClick(id: ZoneId) {
+    if (id === "hombro") {
+      onZoneChange("brazo");
+      onArmSelectionChange({ part: "hombro" });
+      setFlowOpen(true);
+      return;
+    }
+
+    if (id === "brazo") {
+      onZoneChange("brazo");
+      onArmSelectionChange(null);
+      setFlowOpen(true);
+      return;
+    }
+
+    onZoneChange(id);
+    if (needsZoneRefinement(id)) {
+      setFlowOpen(true);
+    }
+  }
+
+  function isZoneChipActive(id: ZoneId): boolean {
+    if (id === "hombro") {
+      return zone === "brazo" && armSelection?.part === "hombro";
+    }
+    if (id === "brazo") {
+      return zone === "brazo" && armSelection?.part !== "hombro";
+    }
+    return zone === id;
+  }
 
   return (
     <div className="space-y-5">
-      <div>
-        <p className="typo-tech text-center uppercase tracking-[0.14em] text-zinc-300">
-          {language === "en" ? "Step 2 of 4" : "Paso 2 de 4"}
-        </p>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-white/10 bg-white/5">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-violet-500/90 via-fuchsia-500/90 to-purple-400/90"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="typo-section text-center text-[2rem] leading-tight md:text-[2.5rem]">
-          {language === "en" ? "Which area" : "¿Que zona"}
-          <br />
-          {language === "en" ? "are you tattooing?" : "quieres tatuar?"}
+      <div className="space-y-1 text-center">
+        <h3 className="typo-section text-[1.75rem] leading-tight md:text-[2.1rem]">
+          {t("quoteZonePickTitle")}
         </h3>
-        <p className="typo-body text-center">
-          {language === "en"
-            ? "Pick it and I'll give you a more accurate estimate."
-            : "Eligela y te doy una estimacion mas precisa."}
+        <p className="typo-body mx-auto max-w-md text-sm text-zinc-400">
+          {t("quoteZonePickHint")}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <BodyMapImage side="front" zone={zone} onZoneChange={onZoneChange} language={language} />
-        <BodyMapImage side="back" zone={zone} onZoneChange={onZoneChange} language={language} />
-      </div>
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 sm:p-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {GENERAL_ZONE_IDS.map((id) => {
+            const active = isZoneChipActive(id);
 
-      <div>
-        <p className="typo-subtitle mb-3 inline-flex items-center gap-2 text-base text-zinc-100">
-          <Sparkles className="h-4 w-4 text-violet-300" />
-          {language === "en" ? "Popular areas" : "Zonas frecuentes"}
-        </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {POPULAR_ZONES.map((id) => {
-            const item = ZONES.find((z) => z.id === id);
-            if (!item) return null;
-            const active = zone === id;
             return (
               <button
                 key={id}
                 type="button"
-                onClick={() => onZoneChange(id)}
-                className={
-                  active
-                    ? "inline-flex items-center gap-2 rounded-xl border border-violet-300/45 bg-violet-500/16 px-3 py-2 text-sm font-semibold text-violet-100"
-                    : "inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
-                }
+                onClick={() => handleZoneButtonClick(id)}
+                aria-pressed={active}
+                className={optionButtonClass(active)}
               >
-                {id === "espalda" ? (
-                  <PersonStanding className="h-4 w-4" />
-                ) : id === "pecho" ? (
-                  <Bone className="h-4 w-4" />
-                ) : (
-                  <CircleDot className="h-4 w-4" />
-                )}
-                {item.label}
+                {getZoneIcon(id)}
+                {t(ZONE_LABEL_KEYS[id])}
               </button>
             );
           })}
         </div>
+
+        {zone === "otro" ? (
+          <div className="mt-3">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+              {t("quoteZoneOtherLabel")}
+            </label>
+            <input
+              value={zoneOther}
+              onChange={(event) => onZoneOtherChange(event.target.value)}
+              placeholder={t("quoteZoneOtherPlaceholder")}
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-zinc-400/50"
+            />
+          </div>
+        ) : null}
       </div>
 
-      <div className="glass-card rounded-xl p-2">
-        <select
-          value={zone}
-          onChange={(e) => onZoneChange(e.target.value as ZoneId)}
-          className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-base font-semibold text-zinc-100 outline-none focus:border-violet-500/45"
-        >
-          {ZONES.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <BodyMapImage
+          side="front"
+          zone={zone}
+          armSelection={armSelection}
+          legSelection={legSelection}
+          onSpotClick={handleBodySpotClick}
+        />
+        <BodyMapImage
+          side="back"
+          zone={zone}
+          armSelection={armSelection}
+          legSelection={legSelection}
+          onSpotClick={handleBodySpotClick}
+        />
       </div>
+
+      <div
+        className={[
+          "rounded-xl border px-4 py-3",
+          refinementComplete || !zone
+            ? "border-zinc-500/20 bg-zinc-600/8"
+            : "border-violet-400/25 bg-violet-950/20",
+        ].join(" ")}
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+          {t("quoteSelectionSummary")}
+        </p>
+        <p className="mt-0.5 text-base font-bold text-zinc-100">{selectionLabel}</p>
+
+        {zone && needsZoneRefinement(zone) && !refinementComplete ? (
+          <button
+            type="button"
+            onClick={() => setFlowOpen(true)}
+            className="focus-ring mt-3 inline-flex min-h-[44px] items-center rounded-xl border border-violet-300/30 bg-violet-500/12 px-4 py-2 text-sm font-semibold text-violet-100 transition hover:bg-violet-500/18 active:scale-[0.98]"
+          >
+            {t("quoteZoneResumeDetail")}
+          </button>
+        ) : null}
+      </div>
+
+      {zone && needsZoneRefinement(zone) ? (
+        <ZoneRefinementFlow
+          open={flowOpen}
+          zone={zone}
+          headPart={headPart}
+          onHeadPartChange={onHeadPartChange}
+          backPart={backPart}
+          onBackPartChange={onBackPartChange}
+          armSelection={armSelection}
+          onArmSelectionChange={onArmSelectionChange}
+          legSelection={legSelection}
+          onLegSelectionChange={onLegSelectionChange}
+          onClose={() => setFlowOpen(false)}
+          onComplete={() => setFlowOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
-

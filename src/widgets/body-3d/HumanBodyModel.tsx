@@ -1,0 +1,200 @@
+"use client";
+
+import { useEffect, useMemo, useRef } from "react";
+import { useGLTF } from "@react-three/drei";
+import { useFrame, type ThreeElements } from "@react-three/fiber";
+import {
+  Color,
+  Mesh,
+  MeshStandardMaterial,
+  type Material,
+  type Object3D,
+} from "three";
+import type { BodyModelDefinition } from "@/widgets/body-3d/bodyModelDefinition";
+import type { BodyAppearanceMode } from "@/widgets/body-3d/bodyViewerTypes";
+
+type HumanBodyModelProps = Omit<ThreeElements["group"], "children"> & {
+  model: BodyModelDefinition;
+  appearance?: BodyAppearanceMode;
+  wireframe?: boolean;
+  /** Cuando false, el BodyVisual no captura pointer (InteractionModel lo hace). */
+  raycastEnabled?: boolean;
+  /**
+   * 0 = brillo normal.
+   * 1 = cuerpo atenuado mientras hay zona en foco (hover/selección).
+   */
+  focusDim?: number;
+};
+
+function createNeutralMaterial(wireframe: boolean) {
+  return new MeshStandardMaterial({
+    color: new Color("#b9b4c6"),
+    roughness: 0.72,
+    metalness: 0.04,
+    flatShading: false,
+    wireframe,
+  });
+}
+
+function disposeMaterial(material: Material | Material[]) {
+  const list = Array.isArray(material) ? material : [material];
+  for (const mat of list) {
+    mat.dispose();
+  }
+}
+
+function collectMeshes(root: Object3D) {
+  const meshes: Mesh[] = [];
+  root.traverse((obj) => {
+    const mesh = obj as Mesh;
+    if (mesh.isMesh) meshes.push(mesh);
+  });
+  return meshes;
+}
+
+function forEachStandardMaterial(
+  material: Material | Material[],
+  fn: (mat: MeshStandardMaterial) => void,
+) {
+  const list = Array.isArray(material) ? material : [material];
+  for (const mat of list) {
+    if (mat && "color" in mat) fn(mat as MeshStandardMaterial);
+  }
+}
+
+/**
+ * Carga y presenta un cuerpo 3D a partir de una `BodyModelDefinition`.
+ * No conoce assets concretos ni el dominio de zonas.
+ */
+export function HumanBodyModel({
+  model,
+  appearance = "original",
+  wireframe = false,
+  raycastEnabled = true,
+  focusDim = 0,
+  ...props
+}: HumanBodyModelProps) {
+  const { scene } = useGLTF(model.src);
+  const neutralMaterialRef = useRef<MeshStandardMaterial | null>(null);
+  const baseColorsRef = useRef(new Map<string, Color>());
+
+  const prepared = useMemo(() => {
+    const cloned = scene.clone(true);
+    const originals = new Map<string, Material | Material[]>();
+
+    cloned.traverse((obj) => {
+      const mesh = obj as Mesh;
+      if (!mesh.isMesh) return;
+      mesh.frustumCulled = false;
+
+      if (Array.isArray(mesh.material)) {
+        mesh.material = mesh.material.map((mat) => mat.clone());
+      } else if (mesh.material) {
+        mesh.material = mesh.material.clone();
+      }
+      originals.set(mesh.uuid, mesh.material);
+    });
+
+    return { cloned, originals };
+  }, [scene]);
+
+  useEffect(() => {
+    for (const mesh of collectMeshes(prepared.cloned)) {
+      mesh.raycast = raycastEnabled
+        ? Mesh.prototype.raycast
+        : () => undefined;
+    }
+  }, [prepared, raycastEnabled]);
+
+  useEffect(() => {
+    const { cloned, originals } = prepared;
+    const meshes = collectMeshes(cloned);
+    // baseColors se indexa por uuid de material: no se limpia aquí, o el
+    // color ya atenuado se tomaría como base y el cuerpo se oscurecería.
+
+    if (appearance === "neutral") {
+      if (!neutralMaterialRef.current) {
+        neutralMaterialRef.current = createNeutralMaterial(wireframe);
+      } else {
+        neutralMaterialRef.current.wireframe = wireframe;
+        neutralMaterialRef.current.needsUpdate = true;
+      }
+
+      for (const mesh of meshes) {
+        mesh.material = neutralMaterialRef.current;
+      }
+    } else {
+      for (const mesh of meshes) {
+        const original = originals.get(mesh.uuid);
+        if (!original) continue;
+        mesh.material = original;
+        const list = Array.isArray(original) ? original : [original];
+        for (const mat of list) {
+          const std = mat as MeshStandardMaterial;
+          if ("wireframe" in std) {
+            std.wireframe = wireframe;
+            std.needsUpdate = true;
+          }
+        }
+      }
+    }
+  }, [appearance, prepared, wireframe]);
+
+  // Atenuado suave fuera de la zona pintada (el overlay va aparte).
+  // Se interpola por frame: al pasar el cursor entre zonas no "parpadea".
+  const targetBrightness = 1 - Math.min(1, Math.max(0, focusDim)) * 0.32;
+  const brightnessRef = useRef(1);
+  const appliedRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    // Material nuevo (apariencia/wireframe) → reaplicar en el próximo frame.
+    appliedRef.current = null;
+  }, [prepared, appearance, wireframe]);
+
+  useFrame((_, delta) => {
+    const current = brightnessRef.current;
+    const k = 1 - Math.exp(-delta * 14);
+    let next = current + (targetBrightness - current) * k;
+    if (Math.abs(targetBrightness - next) < 0.002) next = targetBrightness;
+    brightnessRef.current = next;
+    if (appliedRef.current === next) return;
+    appliedRef.current = next;
+
+    const baseColors = baseColorsRef.current;
+    for (const mesh of collectMeshes(prepared.cloned)) {
+      forEachStandardMaterial(mesh.material, (mat) => {
+        if (!baseColors.has(mat.uuid)) {
+          baseColors.set(mat.uuid, mat.color.clone());
+        }
+        mat.color.copy(baseColors.get(mat.uuid)!).multiplyScalar(next);
+      });
+    }
+  });
+
+  useEffect(() => {
+    const originals = prepared.originals;
+    const baseColors = baseColorsRef.current;
+    return () => {
+      if (neutralMaterialRef.current) {
+        neutralMaterialRef.current.dispose();
+        neutralMaterialRef.current = null;
+      }
+      for (const material of originals.values()) {
+        disposeMaterial(material);
+      }
+      baseColors.clear();
+    };
+  }, [prepared]);
+
+  const scale = model.scale ?? 1;
+
+  return (
+    <group
+      {...props}
+      rotation={model.rotation}
+      scale={[scale, scale, scale]}
+    >
+      <primitive object={prepared.cloned} />
+    </group>
+  );
+}

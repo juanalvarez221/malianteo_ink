@@ -16,6 +16,7 @@ const fontDisplay = Syncopate({
   weight: ["700"],
 });
 
+
 const fontMono = Space_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
