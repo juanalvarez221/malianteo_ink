@@ -264,63 +264,6 @@
   text-transform: uppercase;
 }
 
-/* ── Insignia del hero ─────────────────────────────────── */
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  min-height: 40px;
-  padding: 0.35rem 1rem 0.35rem 0.7rem;
-  border: 1px solid rgba(196, 181, 253, 0.5);
-  border-radius: 999px;
-  background: rgba(22, 12, 40, 0.72);
-  box-shadow: 0 10px 26px -14px rgba(var(--rgb-brand-violet), 0.85);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-decoration: none;
-  text-transform: uppercase;
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    transform 120ms var(--tour-ease),
-    border-color 200ms var(--tour-ease),
-    background-color 200ms var(--tour-ease);
-}
-
-.badge:active {
-  transform: scale(0.97);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .badge:hover {
-    border-color: rgba(196, 181, 253, 0.85);
-    background: rgba(46, 16, 101, 0.8);
-  }
-}
-
-.badge:focus-visible {
-  outline: 2px solid var(--brand-violet-200);
-  outline-offset: 3px;
-}
-
-.badgeFlags {
-  display: inline-flex;
-  align-items: center;
-}
-
-.badgeFlag {
-  width: 18px;
-  height: auto;
-  border-radius: 2px;
-  box-shadow: 0 0 0 1.5px rgba(22, 12, 40, 0.95);
-}
-
-.badgeFlag + .badgeFlag {
-  margin-left: -5px;
-}
-
 @keyframes tour-marquee {
   to {
     transform: translateX(-50%);
@@ -349,9 +292,5 @@
 
   .country {
     transition: opacity 400ms linear;
-  }
-
-  .badge:active {
-    transform: none;
   }
 }

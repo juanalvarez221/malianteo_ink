@@ -5,7 +5,7 @@
  * progreso de scroll). Solo imágenes y video: sin nombres, números ni textos.
  *
  * - Cada slide es una obra (nunca se repite; las colaboraciones viven en
- *   "Obras a cuatro manos"). La obra centrada recorre sus propias fotos y su
+ *   "Proyectos en colaboración"). La obra centrada recorre sus propias fotos y su
  *   video con fundido; al terminar, el carrusel avanza solo.
  * - Arrastre con inercia, bucle infinito, flechas, teclado y puntos.
  * - Se pausa al interactuar, fuera de pantalla o con el visor abierto.
@@ -20,6 +20,7 @@ import { useInView, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
 import { BrandWatermark } from "@/shared/ui/BrandWatermark";
+import { Reveal } from "@/shared/ui/Reveal";
 import {
   ActiveVideo,
   MediaViewer,
@@ -222,14 +223,14 @@ export function SelectedWorks() {
       className="relative z-20 w-full scroll-mt-20 py-14 md:py-20"
     >
       <header className="mx-auto flex w-full max-w-6xl items-end justify-between gap-6 px-6">
-        <div>
+        <Reveal>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-200/80">
             {t("worksTag")}
           </p>
           <h2 id="selected-works-heading" className="typo-section mt-2">
             {t("worksTitle")}
           </h2>
-        </div>
+        </Reveal>
         <div className="hidden shrink-0 gap-2 md:flex">
           <NavButton label={t("collabPrev")} onClick={() => api?.scrollPrev()}>
             <ChevronLeft className="h-5 w-5" />
@@ -268,7 +269,7 @@ export function SelectedWorks() {
                     onClick={() => onSlideClick(index)}
                     aria-label={index === selected ? t("collabOpenViewer") : t("collabNext")}
                     tabIndex={index === selected ? 0 : -1}
-                    className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-[1.75rem] bg-zinc-950 ring-1 ring-white/10 shadow-[0_40px_80px_-40px_rgba(0,0,0,0.95)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-400"
+                    className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-[1.75rem] bg-zinc-950 ring-1 ring-white/10 shadow-[0_40px_80px_-40px_rgba(0,0,0,0.95)] transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-400"
                   >
                     <WorkSlide media={work} active={index === selected} step={step} />
                     <span

@@ -215,7 +215,9 @@ body {
 
 .typo-section {
   font-family: var(--font-display), var(--font-inter), ui-sans-serif;
-  font-size: 1.75rem;
+  /* Fluido en celulares angostos (<400px): Syncopate es muy ancha y una
+     palabra larga como "COLABORACIÓN" no cabe a 28px en 360-375px. */
+  font-size: clamp(1.4rem, 7vw, 1.75rem);
   line-height: 1.08;
   font-weight: 700;
   text-transform: uppercase;
@@ -2698,4 +2700,10 @@ body:has([data-connection-decline="open"]) .quote-shell > main {
 @keyframes worksSegment {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
+}
+
+/* Home: el fondo negro de <main> tapa la tormenta morada fija; se apaga
+   para no gastar GPU en capas que no se ven (clave en celular). */
+body:has(.home-page) .purple-storm {
+  display: none;
 }

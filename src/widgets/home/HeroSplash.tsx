@@ -1,24 +1,34 @@
 "use client";
 
+/**
+ * Home de Malianteo, pensada primero para celular.
+ *
+ * Hero: video a pantalla completa con parallax al hacer scroll. Todo lo que
+ * se mueve con el scroll anima solo transform y opacity (nada de blur por
+ * frame), así se mantiene fluido en teléfonos. Las alturas usan svh/lvh en
+ * vez de dvh para que el hero no salte cuando la barra del navegador se
+ * esconde o aparece.
+ */
+
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   AnimatePresence,
   motion,
-  useMotionTemplate,
+  useReducedMotion,
   useScroll,
   useTransform,
 } from "framer-motion";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
 import { IdentityPortraits } from "@/widgets/home/IdentityPortraits";
 import { SelectedWorks } from "@/widgets/home/SelectedWorks";
 import { FourHandsWorks } from "@/widgets/home/FourHandsWorks";
 import { PresentationCta } from "@/widgets/home/PresentationCta";
 import { ContactLauncher } from "@/widgets/home/ContactLauncher";
-import { Tour2027, TourBadge } from "@/widgets/home/Tour2027";
+import { Tour2027 } from "@/widgets/home/Tour2027";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
 import { BRAND } from "@/shared/config/brand";
+import { EASE_OUT_EXPO, Reveal } from "@/shared/ui/Reveal";
 
 type HeroSplashProps = {
   backgroundImageUrl: string;
@@ -38,6 +48,7 @@ export function HeroSplash({
   wordmarkSrc,
 }: HeroSplashProps) {
   const { t } = useSiteLanguage();
+  const reduce = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const [heroIndex, setHeroIndex] = useState(0);
   const heroImages =
@@ -52,20 +63,17 @@ export function HeroSplash({
     offset: ["start start", "end start"],
   });
 
-  // Base parallax that always tracks scroll progress.
+  // Parallax del fondo: solo transform y opacity (compositor, sin repintar).
   const imageY = useTransform(scrollYProgress, [0, 1], [0, -72]);
   const imageScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.78, 1], [1, 0.94, 0.72]);
-  const heroBlur = useTransform(scrollYProgress, [0, 1], [0, 2.4]);
-  const heroFilter = useMotionTemplate`blur(${heroBlur}px)`;
 
-  const markY = useTransform(scrollYProgress, [0, 1], [24, 36]);
+  // La firma crece y se desvanece; el subtítulo se queda atrás.
+  const markY = useTransform(scrollYProgress, [0, 1], [0, 14]);
   const markOpacity = useTransform(scrollYProgress, [0, 0.55, 1], [1, 0.76, 0.12]);
   const markScale = useTransform(scrollYProgress, [0, 0.55, 1], [0.92, 1.02, 1.14]);
-  const markBlur = useTransform(scrollYProgress, [0, 0.7, 1], [0, 0.6, 2.8]);
-  const markFilter = useMotionTemplate`blur(${markBlur}px)`;
   const subtitleY = useTransform(scrollYProgress, [0, 1], [0, 52]);
-  const subtitleOpacity = useTransform(scrollYProgress, [0, 1], [0.88, 0.38]);
+  const subtitleOpacity = useTransform(scrollYProgress, [0, 1], [1, 0.4]);
 
   useEffect(() => {
     if (!useHeroCarousel) return;
@@ -75,18 +83,26 @@ export function HeroSplash({
     return () => window.clearInterval(id);
   }, [heroImages.length, useHeroCarousel]);
 
+  const enter = (delay: number, y = 14) =>
+    reduce
+      ? {}
+      : {
+          initial: { opacity: 0, y },
+          animate: { opacity: 1, y: 0 },
+          transition: { delay, duration: 0.9, ease: EASE_OUT_EXPO },
+        };
+
   return (
-    <main className="relative overflow-x-clip bg-black text-white">
+    <main className="home-page relative overflow-x-clip bg-black text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1100px_540px_at_8%_-8%,rgba(139,92,246,0.26),transparent_60%),radial-gradient(920px_480px_at_95%_6%,rgba(168,85,247,0.2),transparent_62%),radial-gradient(1200px_600px_at_50%_105%,rgba(91,33,182,0.2),transparent_64%)]" />
       <div className="pointer-events-none absolute -left-24 top-[36%] h-64 w-64 rounded-full bg-violet-500/18 blur-[95px] md:h-96 md:w-96" />
       <div className="pointer-events-none absolute -right-16 top-[58%] h-64 w-64 rounded-full bg-violet-600/16 blur-[95px] md:h-[26rem] md:w-[26rem]" />
       <div className="pointer-events-none absolute left-1/2 top-[74%] h-60 w-[82vw] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.2),transparent_68%)] blur-[46px]" />
-      <section ref={sectionRef} className="relative h-[112dvh] w-full md:h-[118dvh]">
+
+      <section ref={sectionRef} className="relative h-[118svh] w-full">
         <motion.div
-          className="sticky top-0 h-[100dvh] overflow-hidden"
-          style={{ y: imageY, scale: imageScale, opacity: heroOpacity, filter: heroFilter }}
-          animate={{ rotateZ: 0 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
+          className="sticky top-0 h-[100lvh] overflow-hidden will-change-transform"
+          style={reduce ? undefined : { y: imageY, scale: imageScale, opacity: heroOpacity }}
         >
           {backgroundVideoUrl ? (
             <video
@@ -128,114 +144,81 @@ export function HeroSplash({
         <div className="absolute inset-0 z-[2] bg-gradient-to-b from-transparent via-black/35 to-black/95" />
         <div className="absolute inset-0 z-[2] shadow-[inset_0_0_160px_40px_rgba(0,0,0,0.85)]" />
 
-        <div className="absolute inset-0 z-[4] flex h-[100dvh] w-full flex-col items-center justify-end px-6 pb-16 text-center md:pb-14">
-          <div className="mb-4 md:mb-6">
-            <TourBadge />
-          </div>
+        <div className="absolute inset-x-0 top-0 z-[4] flex h-[100svh] w-full flex-col items-center justify-end px-6 pb-24 text-center md:pb-28">
           {wordmarkSrc ? (
             <motion.div
-              initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
-              style={{
-                y: markY,
-                opacity: markOpacity,
-                scale: markScale,
-                filter: markFilter,
-              }}
-              className="z-20 w-[60vw] max-w-[320px] drop-shadow-[0_16px_36px_rgba(0,0,0,0.92)] will-change-transform sm:max-w-[380px] md:w-[68vw] md:max-w-[820px]"
-              aria-label={artistName}
+              style={reduce ? undefined : { y: markY, opacity: markOpacity, scale: markScale }}
+              className="z-20 w-[66vw] max-w-[340px] will-change-transform sm:max-w-[400px] md:w-[68vw] md:max-w-[820px]"
             >
-              <Image
-                src={wordmarkSrc}
-                alt={artistName}
-                width={BRAND.logo.width}
-                height={BRAND.logo.height}
-                priority
-                className="h-auto w-full object-contain"
-              />
+              <motion.div
+                {...(reduce
+                  ? {}
+                  : {
+                      initial: { opacity: 0, y: 18, filter: "blur(8px)" },
+                      animate: { opacity: 1, y: 0, filter: "blur(0px)" },
+                      transition: { duration: 1, ease: EASE_OUT_EXPO },
+                    })}
+                className="drop-shadow-[0_16px_36px_rgba(0,0,0,0.92)]"
+              >
+                <Image
+                  src={wordmarkSrc}
+                  alt={artistName}
+                  width={BRAND.logo.width}
+                  height={BRAND.logo.height}
+                  priority
+                  className="h-auto w-full object-contain"
+                />
+              </motion.div>
             </motion.div>
           ) : (
             <motion.h1
-              initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              style={{ y: markY, opacity: markOpacity }}
+              {...enter(0, 12)}
               className="typo-hero text-[2.2rem] drop-shadow-[0_10px_28px_rgba(0,0,0,0.9)] md:text-[5rem]"
             >
               {artistName}
             </motion.h1>
           )}
 
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 0.92, y: 0 }}
-            transition={{ delay: 0.05, duration: 0.45, ease: "easeOut" }}
-            style={{ y: subtitleY, opacity: subtitleOpacity }}
-            className="mt-0.5 text-[0.54rem] font-semibold uppercase tracking-[0.16em] text-zinc-200 md:text-[0.84rem] md:tracking-[0.24em]"
-          >
-            {t("heroSubtitle") ?? subtitle}
-          </motion.p>
+          <motion.div style={reduce ? undefined : { y: subtitleY, opacity: subtitleOpacity }}>
+            <motion.p
+              {...enter(0.18, 10)}
+              className="mt-1 text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-zinc-100/90 md:text-[0.84rem] md:tracking-[0.28em]"
+            >
+              {t("heroSubtitle") ?? subtitle}
+            </motion.p>
+          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12, duration: 0.5, ease: "easeOut" }}
-            className="mt-6 w-full max-w-[320px] md:mt-7 md:max-w-sm"
-          >
+          <motion.div {...enter(0.32)} className="mt-7 w-full max-w-[340px] md:mt-8 md:max-w-sm">
             <Link
               href="/cotizacion"
-              className="btn-accent focus-ring typo-cta group inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 md:py-4"
+              className="btn-accent focus-ring typo-cta group inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 md:py-4"
             >
               {t("heroCta")}
-              <span className="transition-transform group-hover:translate-x-1">
+              <span className="transition-transform duration-200 group-hover:translate-x-1 group-active:translate-x-1">
                 →
               </span>
             </Link>
-            <p className="mt-2.5 text-[11px] font-medium tracking-[0.04em] text-zinc-300/90 md:text-xs">
-              {t("heroCtaNote")}
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.45 }}
-            className="mt-3.5 flex flex-col items-center gap-1 md:mt-4"
-          >
-            <motion.span
-              animate={{ y: [0, 4, 0] }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/35"
-            >
-              <ChevronDown className="h-4 w-4 text-zinc-200" />
-            </motion.span>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-300/90 md:text-[11px]">
-              {t("heroScroll")}
-            </p>
           </motion.div>
         </div>
 
         <div className="absolute bottom-0 z-20 h-1 w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </section>
 
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.18 }}
-        transition={{ duration: 0.55, ease: "easeOut" }}
-        className="relative z-20 mx-auto w-full max-w-6xl px-6 py-14 md:py-20"
-      >
-        <div className="glass-card relative overflow-hidden rounded-3xl p-5 md:p-8">
+      <section className="relative z-20 mx-auto w-full max-w-6xl px-6 py-14 md:py-20">
+        <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-[rgba(20,20,20,0.6)] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.3)] md:p-8">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(520px_220px_at_10%_0%,rgba(168,85,247,0.2),transparent_58%),radial-gradient(620px_260px_at_100%_100%,rgba(124,58,237,0.16),transparent_60%)]" />
           <div className="relative z-10">
-            <h2 className="typo-section max-w-4xl">{t("identityTitle")}</h2>
-            <p className="typo-body mt-3 max-w-2xl text-zinc-200">{t("identityP1")}</p>
+            <Reveal>
+              <h2 className="typo-section max-w-4xl">{t("identityTitle")}</h2>
+            </Reveal>
+            <Reveal delay={0.08}>
+              <p className="typo-body mt-3 max-w-2xl text-zinc-200">{t("identityP1")}</p>
+            </Reveal>
 
             <IdentityPortraits />
           </div>
         </div>
-      </motion.section>
+      </section>
 
       <Tour2027 />
 
@@ -247,4 +230,3 @@ export function HeroSplash({
     </main>
   );
 }
-

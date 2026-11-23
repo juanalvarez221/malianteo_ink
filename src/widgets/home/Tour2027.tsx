@@ -23,7 +23,7 @@ type Country = {
   nameKey: SiteCopyKey;
   /** Bandera oficial ondeando (render 1800 px con transparencia). */
   flag: { src: string; width: number; height: number };
-  /** Bandera oficial plana y pequeña (franja e insignia). */
+  /** Bandera oficial plana y pequeña (franja en movimiento). */
   mini: { src: string; width: number; height: number };
 };
 
@@ -66,21 +66,6 @@ function MiniFlag({ country, width, className }: { country: Country; width: numb
       sizes={`${width}px`}
       className={className}
     />
-  );
-}
-
-/** Insignia del hero: lleva al tour y muestra las cuatro banderas. */
-export function TourBadge() {
-  const { t } = useSiteLanguage();
-  return (
-    <a href="#tour-2027" className={styles.badge}>
-      <span className={styles.badgeFlags} aria-hidden="true">
-        {COUNTRIES.map((country) => (
-          <MiniFlag key={country.id} country={country} width={18} className={styles.badgeFlag} />
-        ))}
-      </span>
-      <span>{t("heroTourBadge")}</span>
-    </a>
   );
 }
 

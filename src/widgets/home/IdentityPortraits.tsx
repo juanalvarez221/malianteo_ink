@@ -4,10 +4,15 @@
  * Tríptico editorial de identidad: tres retratos sin texto encima.
  * Todos llevan la firma del logotipo como marca de agua; los
  * laterales se desplazan en vertical para dar ritmo de revista, no de carrusel.
+ *
+ * Movimiento: cada foto entra subiendo y, mientras cruza la pantalla, hace un
+ * zoom-out lento con parallax (ligado al scroll). Así el celular, que no tiene
+ * hover, recibe el mismo efecto vivo que el zoom de escritorio.
  */
 
+import { useRef } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { useSiteLanguage } from "@/shared/i18n/LanguageProvider";
 import { BrandWatermark } from "@/shared/ui/BrandWatermark";
 
@@ -37,27 +42,39 @@ function Portrait({
   watermark?: "sm" | "md" | "lg";
 }) {
   const reduce = useReducedMotion();
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  // Escala mínima 1.12 cubre el ±5 % de desplazamiento sin dejar bordes.
+  const scale = useTransform(scrollYProgress, [0, 1], [1.2, 1.12]);
+  const y = useTransform(scrollYProgress, [0, 1], ["-5%", "5%"]);
+
   return (
     <motion.figure
-      initial={reduce ? false : { opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
+      ref={ref}
+      initial={reduce ? false : { opacity: 0, y: 28, scale: 0.97 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.9, delay, ease: [0.16, 1, 0.3, 1] }}
       className={[
         "group relative overflow-hidden rounded-[1.35rem] bg-zinc-950 ring-1 ring-white/10",
         className,
       ].join(" ")}
     >
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        quality={92}
-        sizes={sizes}
-        priority={priority}
-        className="object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.035]"
-        style={{ objectPosition: position }}
-      />
+      <motion.div
+        className="absolute inset-0 will-change-transform"
+        style={reduce ? undefined : { scale, y }}
+      >
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          quality={92}
+          sizes={sizes}
+          priority={priority}
+          className="object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.035]"
+          style={{ objectPosition: position }}
+        />
+      </motion.div>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(5,3,10,0.55),transparent_38%),radial-gradient(120%_80%_at_50%_0%,transparent_60%,rgba(5,3,10,0.45))]"

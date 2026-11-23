@@ -1,5 +1,5 @@
 /**
- * Datos de las obras a cuatro manos. Para sumar una colaboración nueva basta
+ * Datos de los proyectos en colaboración. Para sumar una colaboración nueva basta
  * con registrar a los artistas (si no existen) y añadir una entrada a
  * COLLABORATIONS: la sección se arma sola.
  */

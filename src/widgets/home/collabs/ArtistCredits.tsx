@@ -3,6 +3,10 @@
 /**
  * Créditos de artistas: foto en círculo con aro, nombre real, @usuario y un
  * acceso claro a su Instagram. Toda la fila es el enlace.
+ *
+ * - ArtistList: filas completas (escritorio).
+ * - ArtistChips: chips compactos (celular), para que el panel de cada
+ *   colaboración quepa entero en la pantalla.
  */
 
 import Image from "next/image";
@@ -13,6 +17,7 @@ import { instagramProfileUrl, type Artist } from "./data";
 
 /** Diámetro de la foto (sin contar el aro). */
 const AVATAR_PX = 52;
+const CHIP_AVATAR_PX = 28;
 
 function initials(name: string) {
   return name
@@ -24,24 +29,24 @@ function initials(name: string) {
 }
 
 /** Foto circular con aro en morados y un hueco del color del panel. */
-function Avatar({ artist }: { artist: Artist }) {
+function Avatar({ artist, size = AVATAR_PX }: { artist: Artist; size?: number }) {
   return (
     <span className="inline-flex shrink-0 rounded-full bg-[linear-gradient(140deg,#c4b5fd_0%,#7c3aed_42%,#4c1d95_72%,#a78bfa_100%)] p-[2px] shadow-[0_0_18px_rgba(124,58,237,0.35)] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/artist:scale-[1.04]">
       <span className="inline-flex rounded-full bg-[#0b0812] p-[2px]">
         <span
           className="relative inline-flex overflow-hidden rounded-full bg-zinc-800"
-          style={{ width: AVATAR_PX, height: AVATAR_PX }}
+          style={{ width: size, height: size }}
         >
           {artist.avatar ? (
             <Image
               src={artist.avatar}
               alt=""
               fill
-              sizes={`${AVATAR_PX}px`}
+              sizes={`${size}px`}
               className="object-cover"
             />
           ) : (
-            <span className="m-auto text-xs font-semibold tracking-wide text-zinc-300">
+            <span className="m-auto text-[11px] font-semibold tracking-wide text-zinc-300">
               {initials(artist.name)}
             </span>
           )}
@@ -117,5 +122,50 @@ export function ArtistList({ artists }: { artists: readonly Artist[] }) {
         ))}
       </ul>
     </div>
+  );
+}
+
+/**
+ * Versión compacta para celular: chips en dos columnas. Si el número de
+ * artistas es impar, el último ocupa la fila entera; así el nombre de cada
+ * uno se ve completo y el panel no crece de más.
+ */
+export function ArtistChips({ artists }: { artists: readonly Artist[] }) {
+  const { t } = useSiteLanguage();
+
+  return (
+    <ul aria-label={t("collabArtistsLabel")} className="grid grid-cols-2 gap-2">
+      {artists.map((artist, i) => {
+        const fullRow = artists.length % 2 === 1 && i === artists.length - 1;
+        const chip = (
+          <>
+            <Avatar artist={artist} size={CHIP_AVATAR_PX} />
+            <span className="min-w-0 truncate">{artist.name}</span>
+            {artist.verified ? <VerifiedBadge /> : null}
+            {artist.handle ? <span className="sr-only">· @{artist.handle} · Instagram</span> : null}
+          </>
+        );
+        const chipClass = [
+          "inline-flex h-11 min-w-0 max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] pl-1 pr-2.5 text-[13px] font-semibold text-white",
+          fullRow ? "" : "w-full",
+        ].join(" ");
+        return (
+          <li key={artist.name} className={fullRow ? "col-span-2 flex min-w-0" : "flex min-w-0"}>
+            {artist.handle ? (
+              <a
+                href={instagramProfileUrl(artist.handle)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${chipClass} transition-[background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] hover:border-violet-300/50 hover:bg-violet-500/10 active:scale-[0.97] active:bg-violet-500/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400`}
+              >
+                {chip}
+              </a>
+            ) : (
+              <span className={chipClass}>{chip}</span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

@@ -2,7 +2,7 @@
 
 /**
  * Visor a pantalla completa compartido por "Obra seleccionada" y
- * "Obras a cuatro manos": carrusel táctil (Embla), teclado y video de
+ * "Proyectos en colaboración": carrusel táctil (Embla), teclado y video de
  * proceso en la misma secuencia. Siempre lleva la firma de la marca.
  */
 
